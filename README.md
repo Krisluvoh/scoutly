@@ -1,32 +1,86 @@
-# Trendora — Multi-Agent Sales Concierge (CAP 931 Capstone)
+# Trendora — Multi-Agent B2B Account Intelligence Assistant (CAP 931 Capstone)
 
-Trendora is a sales concierge prototype for "hype-cycle" products — think
-limited sneaker drops, boutique luxury exclusives, viral seasonal gadgets.
-It uses three AI agents that each handle one part of the sales conversation,
-and it remembers customers across turns so later messages can reference
-what was said earlier.
+Trendora helps a B2B sales rep research a prospective company before
+outreach. Give it what you're selling, your value proposition, the target
+company's URL, and its competitors' URLs, and five AI agents chain together
+to produce a one-page account intelligence brief: company strategy,
+leadership, press/compliance initiatives, competitive positioning, a
+public-filing summary, and a recommended approach — with real, clickable
+source links.
 
 This was built for the Per Scholas CAP 931 capstone assignment ("Build a
 Sales Agent Prototype Using Multi-Agent GPT Models"). It runs on Claude by
 default, with OpenAI and Groq available as drop-in alternatives.
 
 **Try it live:** [trendora-capstone-3rvg64cvfkm8ch2jibth3a.streamlit.app](https://trendora-capstone-3rvg64cvfkm8ch2jibth3a.streamlit.app)
-— a Streamlit web UI in front of the same three-agent pipeline described
+— a Streamlit web UI in front of the same five-agent pipeline described
 below, running on Groq's free tier.
 
 Setup and dependencies are managed with **[uv](https://docs.astral.sh/uv/)**.
+
+## 0. Project history: why this was revised, and what changed
+
+The first submitted version of Trendora was a different prototype: a
+consumer sales concierge that helped an individual *customer* decide
+whether to buy a limited-release product (sneakers, watches, viral
+gadgets), with a Research Agent that evaluated scarcity, hype cycles, and
+resale risk. It scored 106/140 (75.7%).
+
+**Why it didn't meet the requirements.** CAP 931 asks for a B2B tool that
+helps a *sales rep* research a *prospective company* before outreach —
+inputs are a target company URL and competitor URLs, and the required
+output is a one-page account intelligence brief covering company strategy,
+leadership, press releases/job postings, public 10-K/financial standing,
+competitive positioning, and source links. The original build never
+collected a company URL, never fetched or reasoned about a real business,
+and its Research Agent was scoring product hype/scarcity — a fundamentally
+different task from researching a company. The instructor's feedback was
+explicit that the engineering (agent separation, Pydantic validation,
+provider abstraction, shared memory, test coverage) was strong, but the
+domain simply wasn't the one the assignment asked for, so most of the
+CAP 931-specific rubric lines (Inputs Handling, Data Integration & Output
+Relevance) couldn't be credited no matter how well-built the wrong thing
+was.
+
+**What changed.** Everything domain-specific: the three agents were
+replaced with five that map directly onto the brief's required inputs and
+outputs (see sections 4 and 5 below); `schemas.py`'s JSON contracts were
+rewritten around company/competitor/brief data instead of
+hype-cycle/scarcity data; `memory.py`'s fields were remapped from
+customer preferences/hype context to account facts/research history; the
+Streamlit form and PDF export were rebuilt around company/competitor URLs
+instead of a product name and message. A genuinely new capability was also
+added rather than just renamed: `web_research.py`, which fetches real
+company/competitor web pages (`requests` + BeautifulSoup) and looks up real
+SEC EDGAR 10-K filings (free, no API key) — this is what makes the
+"Company Strategy," "Leadership," and "Product/Rating Summary from 10-K"
+sections of the brief grounded in actually-retrieved public information
+instead of an LLM guessing about a URL it never saw.
+
+**What stayed the same.** The architectural decisions the feedback called
+out as strong were kept essentially unchanged: `agents/base_agent.py`'s
+prompt-building/JSON-extraction/retry/validation logic is untouched; the
+orchestrator-as-sole-coordinator pattern (agents never call each other) is
+untouched; the provider abstraction in `llm_client.py` (Anthropic/OpenAI/
+Groq/Mock behind one interface) is untouched; the mock-first philosophy
+that keeps tests and demos free and offline was extended to the new
+fetch layer (`MockFetcher` alongside `MockClient`) rather than replaced;
+and the test suite still follows the same shape (per-agent isolation,
+role-leak checks, full-pipeline integration) the instructor's own guidance
+recommended. See `docs/ASSIGNMENT_BRIEF.md` for the original brief text.
 
 ## 1. Quick start
 
 There are two ways to run Trendora: the original command-line demo, and a
 browser-based version.
 
-**Command line** (three scripted scenarios, printed to the terminal):
+**Command line** (three scripted account-research scenarios, printed to the
+terminal):
 
 ```bash
 uv sync                  # installs everything from pyproject.toml / uv.lock
-uv run main.py            # runs the 3-scenario demo — no API key needed (uses a mock client)
-uv run pytest -q          # runs the test suite — also no API key needed
+uv run main.py            # runs the 3-scenario demo — no API key or network needed (mock LLM + mock fetcher)
+uv run pytest -q          # runs the test suite — also no API key or network needed
 ```
 
 **Web UI** (a single browser form, built with Streamlit — this is what's
@@ -37,19 +91,17 @@ uv sync
 uv run streamlit run streamlit_app.py
 ```
 
-That opens a local page where you can type in a product and a message and
-get the same Intake → Research → Recommendation flow back, plus a follow-up
-box for objections. Without an API key it falls back to the same mock
-responses as the command-line demo.
+That opens a local page where you enter your product, value proposition,
+target contact, and the prospect's company + competitor URLs, and get back
+an Account Snapshot → Company Research → Competitive Landscape → one-page
+Account Brief, plus a follow-up box for logging a prospect's objection.
+Without an API key it falls back to mock LLM responses (the page-fetch
+step still runs for real against whatever URLs you enter, since that
+doesn't need a key).
 
 <p align="center">
-  <img src="docs/screenshots/web-ui-form.png" alt="Trendora web UI: product and message form" width="480">
-  <br><em>The intake form</em>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/web-ui-result.png" alt="Trendora web UI: Intake, Research, and Recommendation results" width="480">
-  <br><em>Intake, Research, and Recommendation results for one scenario</em>
+  <img src="docs/screenshots/web-ui-form.png" alt="Trendora web UI: account research form" width="480">
+  <br><em>The intake form (screenshot predates the CAP 931 domain pivot — see note above)</em>
 </p>
 
 To run either one against a real model, copy `.env.example` to `.env`, add
@@ -57,11 +109,12 @@ your API key(s), and set which provider to use:
 
 ```bash
 cp .env.example .env
-# edit .env: set TRENDORA_PROVIDER=anthropic and ANTHROPIC_API_KEY=sk-ant-...
+# edit .env: set TRENDORA_PROVIDER=anthropic, ANTHROPIC_API_KEY=sk-ant-..., TRENDORA_FETCH_MODE=http
 uv run main.py
 ```
 
-Supported providers: `anthropic` (recommended default), `openai`, `groq`, `mock`.
+Supported LLM providers: `anthropic` (recommended default), `openai`, `groq`, `mock`.
+Supported fetch modes: `http` (real page fetches), `mock` (offline canned pages).
 
 ## 2. Technologies used
 
@@ -69,13 +122,16 @@ Supported providers: `anthropic` (recommended default), `openai`, `groq`, `mock`
 |---|---|
 | **Python 3.12** | The language the whole project is written in. |
 | **uv** | Installs dependencies and manages the virtual environment. Replaces `pip` + `requirements.txt` with one tool that also pins exact versions (`uv.lock`). |
-| **Anthropic SDK (Claude)** | The default LLM provider — the model that actually reads customer messages and writes the JSON responses. |
+| **Anthropic SDK (Claude)** | The default LLM provider — the model that reads research input and writes the JSON responses. |
 | **OpenAI SDK** | An alternate LLM provider, kept for parity with the original assignment brief. |
 | **langchain-groq** | An alternate, free-tier LLM provider (Groq), used through LangChain's `ChatGroq` wrapper since Groq doesn't have its own lightweight SDK. |
+| **requests** | Fetches the target company's and competitors' actual web pages server-side. |
+| **beautifulsoup4** | Parses fetched HTML into clean text plus a filtered list of leadership/press/careers subpage links. |
+| **SEC EDGAR full-text search API** | Free, no-key lookup of a public company's real 10-K filings (accession numbers, dates, filing URLs) — satisfies the brief's "insight from public 10-K reports" requirement with verifiable data. |
 | **Pydantic** | Defines the exact JSON shape each agent must return (`schemas.py`) and rejects anything that doesn't match, before it can break the next step in the pipeline. |
 | **python-dotenv** | Loads API keys from a local `.env` file so they never get hardcoded or committed. |
 | **Streamlit** | Builds the browser-based web UI (`streamlit_app.py`) and hosts it for free on Streamlit Community Cloud. |
-| **pytest** | Runs the 24 automated tests. |
+| **pytest** | Runs the 37 automated tests. |
 | **ruff** | Lints and formats the code (catches unused imports, style issues, common bugs). |
 
 Everything above is declared in `pyproject.toml`, with exact versions
@@ -90,25 +146,29 @@ pyproject.toml / uv.lock   uv-managed dependencies
 requirements.txt           dependency list for Streamlit Cloud's build (mirrors uv.lock)
 main.py                    command-line demo entry point / scenario runner
 streamlit_app.py           browser-based web UI, same pipeline as main.py
-.streamlit/config.toml     Streamlit theme (dark, gold accent — matches the deployed look)
-orchestrator.py            wires the three agents together, manages memory
-memory.py                  TrendoraMemory: cross-turn contextual memory
+.streamlit/config.toml     Streamlit theme (dark, gold accent)
+orchestrator.py            wires the five agents together, fetches pages, manages memory
+memory.py                  TrendoraMemory: cross-run contextual memory for one account
 schemas.py                 pydantic schemas — one per agent's required JSON shape
 llm_client.py              pluggable model backend: Anthropic / OpenAI / Groq / Mock
+web_research.py            pluggable page-fetching backend: real HTTP+BeautifulSoup / Mock, plus SEC EDGAR lookup
 agents/
-  base_agent.py              shared prompt-building, JSON parsing, retry, validation
-  intake_agent.py             Agent 1 — goals, budget, urgency, emotional drivers
-  research_agent.py           Agent 2 — hype/scarcity analysis, alternatives, risk
-  recommendation_agent.py     Agent 3 — final call, objection handling, next steps
+  base_agent.py                 shared prompt-building, JSON parsing, retry, validation
+  account_intake_agent.py       Agent 1 — structures the rep's product/company/competitor input
+  company_research_agent.py     Agent 2 — extracts strategy/leadership/compliance/10-K from fetched pages
+  competitor_agent.py           Agent 3 — extracts competitive positioning from fetched competitor pages
+  sales_recommendation_agent.py Agent 4 — talking points, objections, approach, time-sensitive signals
+  report_agent.py               Agent 5 — assembles the one-page Account Intelligence Brief
 tests/
-  test_llm_client.py          provider factory + mock output shape
+  test_llm_client.py          provider factory + mock output shape (all 5 roles)
+  test_web_research.py        HTML/EDGAR-JSON parsing (pure functions, no live network) + mock fetcher
   test_memory.py              memory update hooks, dedup, persistence
-  test_agents.py              each agent in isolation, role-boundary checks
-  test_orchestrator.py        full pipeline + objection-handling integration tests
+  test_agents.py               each agent in isolation, role-boundary checks
+  test_orchestrator.py         full pipeline + objection-handling integration tests
 docs/
   ASSIGNMENT_BRIEF.md            original capstone assignment, transcribed
-  Trendora_Capstone_Report.docx  formal capstone report, mapped to the grading rubric
-  screenshots/                   web UI screenshots, embedded above
+  Trendora_Capstone_Report.docx  formal capstone report (predates the domain pivot)
+  screenshots/                   web UI screenshots
 examples/
   sample_run_output/             a committed mock run (transcripts + memory) so you can see output without running anything
 ```
@@ -116,47 +176,56 @@ examples/
 Each agent sticks to its own lane: it has its own system prompt, only
 returns JSON matching a fixed schema (see `schemas.py`), and that output
 gets checked with pydantic before the orchestrator or the next agent trusts
-it. All three agents read and write to a shared `TrendoraMemory` object, so
-if Intake learns the customer's budget, Research and Recommendation can see
-it too.
+it. All five agents read and write to a shared `TrendoraMemory` object, so
+by the time the Sales Recommendation Agent runs, it already knows what
+Account Intake, Company Research, and Competitor research found — and if a
+prospect raised an objection on a past research run for the same account,
+that carries forward too.
 
-The orchestrator is the only piece of code that talks to all three agents —
-no agent calls another agent directly. That was one of the assignment's
-requirements (agents shouldn't perform each other's jobs). In the
-instructor's terms, this makes it a **chain** rather than a model-driven
-agent with tools: the sequence is fixed by the orchestrator, not decided by
-the model, which fits fine since nothing here needs dynamic tool selection.
+The orchestrator is the only piece of code that talks to all five agents —
+no agent calls another agent directly. It's also the only piece of code
+that fetches web pages: real page content is retrieved *before* an agent
+runs and handed to it as plain input data, so no agent ever reasons about a
+bare URL from general knowledge. In the instructor's terms, this makes it a
+**chain** rather than a model-driven agent with tools: the sequence is
+fixed by the orchestrator, not decided by the model, which fits fine since
+nothing here needs dynamic tool selection.
 
-## 4. What it takes as input
+## 4. What it takes as input — mapped to the CAP 931 brief
 
-Each scenario run needs:
-- `user_message` — the customer's free-text message (their goal, budget, urgency, mood)
-- `product_name` — the hype-cycle item they're asking about
+The brief asks for: product name, target company URL, product category,
+competitors, value proposition, and target customer. Trendora's intake
+form (`streamlit_app.py`) and `main.py` scenarios collect exactly these:
 
-You can also send a follow-up `user_objection` string, which routes
-straight to the Recommendation Agent since handling objections is its job.
+| CAP 931 input | Where it's collected |
+|---|---|
+| Product Name | `rep_product_name` |
+| Company URL | `company_url` |
+| Product Category (LLM infers if blank) | `product_category` — Account Intake Agent infers it when left blank |
+| Competitors | `competitor_urls` (one or more) |
+| Value Proposition | `value_proposition` |
+| Target Customer | `target_customer_name` |
 
-## 5. Which model, and why
+You can also send a follow-up prospect objection, which routes straight to
+the Sales Recommendation Agent since handling objections is its job.
 
-By default this runs on **Claude** (`claude-sonnet-4-6`) through the
-`anthropic` SDK. I picked Claude because it's reliably good at sticking to
-a strict JSON schema — that's the biggest technical risk in this project,
-since one stray sentence outside the JSON breaks the whole pipeline.
+## 5. What it outputs — mapped to the CAP 931 brief
 
-You can switch providers with `TRENDORA_PROVIDER`:
-- `openai` — GPT-4o-mini by default, via the `openai` SDK.
-- `groq` — GPT-OSS 120B by default, via `langchain-groq`'s `ChatGroq`. A
-  good free-tier option for prototyping, though Groq's free lineup changes
-  often — see the challenges table below for the two times this default
-  already had to be swapped out after a model was discontinued mid-project.
-- `mock` — canned offline responses, no API calls at all. This is the
-  default, so `uv run main.py` and `uv run pytest` both work out of the box
-  with zero setup.
+The brief asks for a comprehensive one-page report covering company
+strategy, initiatives/press/compliance, competitive mentions, leadership
+information, a public 10-K/financial summary, and action links. That's
+exactly `AccountBriefOutput` (`schemas.py`), produced by the Report Agent:
 
-## 6. What it outputs
+| CAP 931 output requirement | Where it's produced |
+|---|---|
+| Company Strategy | `report.company_strategy` — Company Research Agent's `company_strategy`, condensed by the Report Agent |
+| Sign-ups, press releases, key initiatives, regulatory compliance (GDPR/CCPA etc.) | `report.initiatives_and_compliance` — merged from Company Research's `key_initiatives` + `compliance_mentions` |
+| Competitive Mentions | `report.competitive_mentions` — from the Competitor Agent's `notable_mentions` / `competitive_landscape` |
+| Leadership Information (with quotes where available) | `report.leadership_information` — Company Research Agent's `leadership` list (name, title, quote/note), carried through unchanged |
+| Product/Rating Summary from public 10-K reports | `report.financial_summary` — grounded in a real SEC EDGAR full-text-search lookup (`web_research.lookup_public_filings`); says "no public filings found" honestly for private companies |
+| Action Links to source articles/press releases | `report.action_links` — every real URL an agent actually drew from, deduplicated |
 
-Every agent turn produces the JSON object for its role, plus a small
-evaluation block scoring the response:
+Every agent turn also produces a small self-scored evaluation block:
 
 ```json
 {
@@ -169,31 +238,50 @@ evaluation block scoring the response:
 }
 ```
 
-Full transcripts (every agent's input/output for each scenario) get saved
-to `output/transcript_<customer_id>.json`, and each customer's memory gets
-saved to `output/memory_<customer_id>.json`. Both are generated at runtime
+Full transcripts (every agent's input/output for each account) get saved
+to `output/transcript_<account_id>.json`, and each account's memory gets
+saved to `output/memory_<account_id>.json`. Both are generated at runtime
 and git-ignored.
 
-## 7. Extra features beyond the baseline
+## 6. Which model, and why
 
-| Feature | Where to find it |
+By default this runs on **Claude** (`claude-sonnet-4-6`) through the
+`anthropic` SDK. I picked Claude because it's reliably good at sticking to
+a strict JSON schema — that's the biggest technical risk in this project,
+since one stray sentence outside the JSON breaks the whole pipeline.
+
+You can switch providers with `TRENDORA_PROVIDER`:
+- `openai` — GPT-4o-mini by default, via the `openai` SDK.
+- `groq` — GPT-OSS 120B by default, via `langchain-groq`'s `ChatGroq`. A
+  good free-tier option for prototyping, though Groq's free lineup changes
+  often — see the challenges table below.
+- `mock` — canned offline responses, no API calls at all. This is the
+  default, so `uv run main.py` and `uv run pytest` both work out of the box
+  with zero setup.
+
+Independently, `TRENDORA_FETCH_MODE` controls the page-fetching backend
+(`web_research.py`):
+- `http` — real `requests` GETs against the company/competitor URLs
+  entered, parsed with BeautifulSoup. Default for the deployed web app.
+- `mock` — canned offline page content, no network calls. Default for
+  `main.py` and the test suite, so grading and CI stay free and reliable.
+
+## 7. Optional enhancements implemented
+
+| CAP 931 optional enhancement | How Trendora implements it |
 |---|---|
-| Hype prediction | `hype_cycle_analysis` field, Research Agent |
-| Scarcity forecasting | `scarcity_score`, `drop_timing`, Research Agent |
-| Drop alerts | shows up in Recommendation Agent's `next_steps` |
-| Risk scoring | `risks` + `confidence`, Research Agent |
-| Emotional alignment | `emotional_drivers`, Intake Agent |
-| Strategy switching | `strategy_adaptation`, Recommendation Agent — adjusts based on `past_objections` in memory |
+| Alert system for regulatory/product/hiring signals | `sales_recommendation.time_sensitive_signals` — the Sales Recommendation Agent flags anything worth acting on quickly (a leadership change, a hiring surge, a compliance deadline) directly in the brief, rather than a separate notification system a prototype has no way to actually deliver |
+| Improved output strategy | The Report Agent exists specifically to synthesize four agents' output into one coherent one-pager instead of handing the rep four separate JSON blobs |
+| Deployment | Streamlit Community Cloud (see section 9) |
 
-## 8. A guardrail I added on purpose
+## 8. A guardrail I kept from the original build
 
-The assignment didn't ask for this, but I wanted the Recommendation Agent
-to not be pushy. Its prompt tells it explicitly not to pressure a customer
-who's raised a real price or risk concern, and to offer a genuine "wait" or
-"try something else" option when that's the honest answer. An agent that
-just says "buy now" no matter what the customer says isn't a very
-trustworthy salesperson, so this felt worth building in even though it
-wasn't spelled out in the brief.
+The assignment didn't ask for this, but the Sales Recommendation Agent is
+explicitly instructed not to pressure a prospect who's raised a real
+objection, and to address it plainly rather than talk past it. An agent
+that just pushes "buy now" no matter what the prospect says isn't a very
+trustworthy sales tool, so this felt worth keeping even though it wasn't
+spelled out in the brief.
 
 ## 9. Testing
 
@@ -201,42 +289,57 @@ wasn't spelled out in the brief.
 uv run pytest -q
 ```
 
-24 tests cover the provider factory, memory update/dedup/persistence,
-each agent in isolation (schema validation, plus checks that no agent's
-output leaks fields that belong to another role), and the full pipeline
-end to end (all three agents running in sequence, memory updating
-correctly, objection follow-ups routing to the right agent). Everything
-runs against the mock client, so the whole suite is free and works without
-internet access — which matches the instructor's advice to test each agent
-individually.
+37 tests cover the LLM provider factory (all 5 agent roles' mock output
+shapes), the page-fetching layer (HTML/EDGAR-JSON parsing as pure
+functions, no live network calls), memory update/dedup/persistence, each
+agent in isolation (schema validation, plus checks that no agent's output
+leaks fields that belong to another role), and the full pipeline end to
+end (all five agents running in sequence, memory updating correctly,
+objection follow-ups routing to the right agent). Everything runs against
+the mock LLM client and mock fetcher, so the whole suite is free and works
+without internet access.
 
-## 10. Timeline
+## 10. Security note: fetching user-supplied URLs
 
-Built inside the assignment's 2-day window:
-- Day 1: architecture, schemas, memory model, agent prompts, mock client, pipeline wiring.
-- Day 2: hooking up real providers (Anthropic/OpenAI/Groq), setting up the project with `uv`, writing the test suite, three end-to-end scenarios, objection-handling follow-ups, and documentation.
+Because the app fetches company/competitor URLs a user types into a public
+form, `web_research._is_safe_url()` blocks non-http(s) schemes and resolves
+the hostname to reject loopback/private/link-local addresses before any
+request is made — a basic SSRF guard, since a URL-fetching feature exposed
+on a public deployment is otherwise a way to probe internal network
+addresses from the server.
 
-## 11. Problems I ran into, and how I fixed them
+## 11. Timeline
+
+- Original 2-day build: architecture, schemas, memory model, mock client,
+  pipeline wiring, provider integrations, test suite, documentation (as a
+  B2C hype-product concierge — see the note at the top of this file).
+- Pivot after instructor feedback: remapped the same architecture to the
+  CAP 931 B2B account-research brief — new agent roles and schemas, a new
+  real page-fetching layer with a free SEC EDGAR lookup, memory field
+  remapping, new UI inputs/outputs, and a rewritten test suite.
+
+## 12. Problems I ran into, and how I fixed them
 
 | Problem | Fix |
 |---|---|
 | Models sometimes wrap JSON in prose or code fences even when told not to | `BaseAgent._extract_json` strips that out and retries once with a corrective message before giving up |
-| Agents drifting into another agent's job over a longer conversation | Each system prompt states its role boundary twice, and `tests/test_agents.py` checks directly that no cross-role fields leak through |
-| Memory growing without bound over many turns | `as_context_string()` only injects the last 5 product-history entries; covered by `test_memory.py` |
-| Needing to test and demo without burning API credits or requiring a key | The mock client produces schema-valid fixture data for offline runs and the whole test suite |
-| The "hype/urgency" angle risking real manipulative sales pressure | Recommendation Agent's prompt forbids pushing past a stated objection and requires offering a genuine alternative or "wait" path |
+| Agents drifting into another agent's job over a longer research run | Each system prompt states its role boundary twice, and `tests/test_agents.py` checks directly that no cross-role fields leak through |
+| The Report Agent's own prompt describes handing off from "the Company Research Agent" and "the Competitor Agent" by name, which broke `MockClient`'s naive substring-based role detection (it matched the *first* agent name mentioned, not the agent actually running) | Switched `MockClient.generate` to match only the opening "You are the `<Role>` Agent" sentence via regex instead of scanning the whole prompt for any agent name |
+| SEC EDGAR's legacy `browse-edgar` atom endpoint returns zero entries for a plain company-name search (it only returns filing entries for an exact single-CIK match) | Switched to EDGAR's full-text-search JSON API (`efts.sec.gov`), which matches by company name against real filed documents and returns genuine accession numbers/dates/URLs — verified live against Palo Alto Networks' real 10-K filings |
+| A URL-fetching feature on a public form is a potential SSRF vector | Added `_is_safe_url()`: blocks non-http(s) schemes and resolves+rejects private/loopback/link-local hostnames before fetching |
+| Needing to test and demo without burning API credits, requiring a key, or depending on live network access | `MockClient` + `MockFetcher` produce schema-valid fixture data for offline runs and the whole test suite |
 | Wanting pinned, reproducible dependencies instead of a loose `requirements.txt` | Switched to `uv init` / `uv add`, which gives you `pyproject.toml` plus a fully pinned `uv.lock` |
 | Hugging Face Spaces turned out to require a paid plan for anything that runs real Python (Gradio/Docker); the free tier is Static-only, which can't call an API without exposing the key in the browser | Rebuilt the web UI in Streamlit instead and deployed to Streamlit Community Cloud, which is free and has real server-side secrets |
-| The Groq model this project defaulted to (`qwen/qwen3-32b`) got discontinued after deployment, which only showed up as a `groq.NotFoundError` once the app was live | Swapped the default to `llama-3.3-70b-versatile`, a model still on Groq's active list at the time |
-| That replacement model (`llama-3.3-70b-versatile`) got discontinued too, a few weeks later — same `groq.NotFoundError`, same live-app-only symptom | Swapped to `openai/gpt-oss-120b`, currently Groq's flagship production chat model. Groq's free-tier lineup turns over fast enough that this default may need to change again; if the live demo errors, check `console.groq.com/docs/models` for the current production list |
+| The Groq model this project defaulted to (`qwen/qwen3-32b`) got discontinued after deployment, which only showed up as a `groq.NotFoundError` once the app was live | Swapped the default to `llama-3.3-70b-versatile`, then again to `openai/gpt-oss-120b` after that one was also discontinued — Groq's free-tier lineup turns over fast enough that this default may need to change again; check `console.groq.com/docs/models` for the current production list |
 | `st.secrets` raises an exception instead of just returning nothing when there's no `secrets.toml` file, which crashed the app for anyone running it locally without Streamlit Cloud secrets configured | Wrapped that check in a try/except so a missing secrets file is treated as "no key yet," not a crash |
 
-## 12. If this went to production
+## 13. If this went to production
 
-- **Swappable providers**: switching between Anthropic/OpenAI/Groq/mock is one factory call or one environment variable.
+- **Swappable LLM providers**: switching between Anthropic/OpenAI/Groq/mock is one factory call or one environment variable.
+- **Swappable fetch backend**: same pattern for the page-fetching layer (`web_research.get_fetcher`), so a production deployment could swap in a headless-browser fetcher for JS-heavy sites without touching agent code.
 - **Schema enforcement**: pydantic catches any drift in the model's output before it reaches a user or the next agent.
-- **Memory**: right now it's just JSON files — fine for a prototype, but a real deployment would use an actual customer database.
-- **Retries**: currently one corrective re-prompt if the model messes up the JSON. Production would need real exponential backoff and rate-limit handling.
-- **Observability**: transcripts are saved per customer already; in production these would feed into structured logging so the eval scores could actually be monitored.
-- **Cost control**: mock mode is already fully separate from paid inference, so tests, CI, and grading never touch API quota.
+- **Memory**: right now it's just JSON files — fine for a prototype, but a real deployment would use an actual account/CRM database.
+- **Retries**: currently one corrective re-prompt if the model messes up the JSON. Production would need real exponential backoff and rate-limit handling — for both the LLM calls and the page fetches (SEC EDGAR especially expects well-behaved, rate-limited traffic).
+- **Observability**: transcripts are saved per account already; in production these would feed into structured logging so the eval scores could actually be monitored.
+- **Cost control**: mock mode is already fully separate from paid inference and live fetches, so tests, CI, and grading never touch API quota or the network.
 - **Reproducibility**: `uv.lock` pins the exact dependency graph, so `uv sync` gives you the same environment anywhere.

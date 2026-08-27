@@ -11,8 +11,6 @@ passing bad data down the pipeline.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -25,47 +23,93 @@ class Evaluation(BaseModel):
     deal_likelihood: int = Field(ge=0, le=10)
 
 
-class IntakeOutput(BaseModel):
-    """Produced by agents/intake_agent.py."""
+class AccountIntakeOutput(BaseModel):
+    """Produced by agents/account_intake_agent.py."""
 
-    customer_goal: str = ""
-    budget: str = ""
-    urgency_level: str = ""
-    preferences: list[str] = Field(default_factory=list)
-    constraints: list[str] = Field(default_factory=list)
+    rep_product_name: str = ""
+    product_category: str = ""
+    value_proposition: str = ""
+    target_customer_name: str = ""
+    company_url: str = ""
+    competitor_urls: list[str] = Field(default_factory=list)
     missing_info: list[str] = Field(default_factory=list)
-    emotional_drivers: list[str] = Field(default_factory=list)
-    objection_patterns: list[str] = Field(default_factory=list)
+    research_priorities: list[str] = Field(default_factory=list)
     evaluation: Evaluation | None = None
 
 
-class ResearchOutput(BaseModel):
-    """Produced by agents/research_agent.py."""
+class LeadershipContact(BaseModel):
+    """One leadership figure surfaced during company research."""
 
-    attributes_to_research: list[str] = Field(default_factory=list)
-    hype_cycle_analysis: str = ""
-    scarcity_score: str = ""
-    drop_timing: str = ""
-    product_comparison: list[Any] = Field(default_factory=list)
-    collector_value: str = ""
-    risks: list[str] = Field(default_factory=list)
+    name: str = ""
+    title: str = ""
+    quote_or_note: str = ""
+
+
+class CompanyResearchOutput(BaseModel):
+    """Produced by agents/company_research_agent.py."""
+
+    company_strategy: str = ""
+    key_initiatives: list[str] = Field(default_factory=list)
+    compliance_mentions: list[str] = Field(default_factory=list)
+    leadership: list[LeadershipContact] = Field(default_factory=list)
+    financial_summary: str = ""
     confidence: str = ""
+    sources: list[str] = Field(default_factory=list)
     evaluation: Evaluation | None = None
 
 
-class RecommendationOutput(BaseModel):
-    """Produced by agents/recommendation_agent.py."""
+class CompetitorSummary(BaseModel):
+    """Research on one named competitor."""
 
-    recommendation: str = ""
-    reasoning: str = ""
-    objection_handling: str = ""
-    strategy_adaptation: str = ""
+    name: str = ""
+    url: str = ""
+    summary: str = ""
+    notable_mentions: list[str] = Field(default_factory=list)
+
+
+class CompetitorOutput(BaseModel):
+    """Produced by agents/competitor_agent.py."""
+
+    competitors: list[CompetitorSummary] = Field(default_factory=list)
+    competitive_landscape: str = ""
+    differentiation_angle: str = ""
+    sources: list[str] = Field(default_factory=list)
+    evaluation: Evaluation | None = None
+
+
+class SalesRecommendationOutput(BaseModel):
+    """Produced by agents/sales_recommendation_agent.py."""
+
+    talking_points: list[str] = Field(default_factory=list)
+    anticipated_objections: list[str] = Field(default_factory=list)
+    recommended_approach: str = ""
+    time_sensitive_signals: list[str] = Field(default_factory=list)
     next_steps: str = ""
+    objection_handling: str = ""
+    evaluation: Evaluation | None = None
+
+
+class AccountBriefOutput(BaseModel):
+    """
+    Produced by agents/report_agent.py — the one-page Account Intelligence
+    Brief the CAP 931 brief asks for, assembled from every prior agent's
+    output.
+    """
+
+    company_strategy: str = ""
+    initiatives_and_compliance: list[str] = Field(default_factory=list)
+    competitive_mentions: list[str] = Field(default_factory=list)
+    leadership_information: list[LeadershipContact] = Field(default_factory=list)
+    financial_summary: str = ""
+    recommended_strategy: str = ""
+    action_links: list[str] = Field(default_factory=list)
     evaluation: Evaluation | None = None
 
 
 SCHEMAS = {
-    "intake": IntakeOutput,
-    "research": ResearchOutput,
-    "recommendation": RecommendationOutput,
+    "account_intake": AccountIntakeOutput,
+    "company_research": CompanyResearchOutput,
+    "competitor": CompetitorOutput,
+    "sales_recommendation": SalesRecommendationOutput,
+    "report": AccountBriefOutput,
 }

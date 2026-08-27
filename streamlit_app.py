@@ -5,16 +5,20 @@ Streamlit front end for Trendora, built for deployment on Streamlit
 Community Cloud (free, and — unlike Hugging Face Spaces' free tier —
 supports running real server-side Python with proper secrets management).
 
-Wraps TrendoraOrchestrator in a small chat-style UI, styled as a quiet
-boutique concierge rather than a generic form. Streamlit reruns this whole
-script on every interaction, so the orchestrator + memory for the current
-browser session live in st.session_state rather than as local variables.
+Wraps TrendoraOrchestrator in a small form-driven UI: a sales rep enters
+their product, value proposition, target contact, and the prospect's
+company/competitor URLs, and gets back a one-page account intelligence
+brief. Streamlit reruns this whole script on every interaction, so the
+orchestrator + memory for the current browser session live in
+st.session_state rather than as local variables.
 
-Provider defaults to Groq (free tier) via TRENDORA_PROVIDER / GROQ_API_KEY.
-On Streamlit Cloud, set GROQ_API_KEY in the app's Settings -> Secrets; it's
-read from st.secrets there. Locally, it falls back to a .env file. Falls
-back to the mock client if no key is configured, so the app still loads
-and is explorable without one.
+LLM provider defaults to Groq (free tier) via TRENDORA_PROVIDER /
+GROQ_API_KEY. Page fetching defaults to real HTTP fetches via
+TRENDORA_FETCH_MODE (set to "mock" for a fast, offline walkthrough). On
+Streamlit Cloud, set secrets in the app's Settings -> Secrets; they're read
+from st.secrets there. Locally, it falls back to a .env file. Falls back to
+the mock LLM client if no key is configured, so the app still loads and is
+explorable without one — the page-fetch step still runs for real either way.
 """
 
 from __future__ import annotations
@@ -23,6 +27,7 @@ import os
 import re
 import time
 from datetime import datetime
+from urllib.parse import urlparse
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -31,10 +36,13 @@ from fpdf import FPDF
 from llm_client import get_client
 from memory import TrendoraMemory
 from orchestrator import TrendoraOrchestrator
+from web_research import get_fetcher
 
 load_dotenv()
 
 PROVIDER = os.environ.get("TRENDORA_PROVIDER", "groq")
+FETCH_MODE = os.environ.get("TRENDORA_FETCH_MODE", "http")
+SEC_EDGAR_CONTACT_EMAIL = os.environ.get("SEC_EDGAR_CONTACT_EMAIL", "capstone-project@example.com")
 
 try:
     if "GROQ_API_KEY" in st.secrets and not os.environ.get("GROQ_API_KEY"):
@@ -198,6 +206,7 @@ div[data-testid="stDownloadButton"] button:hover {
     color: var(--tr-ink);
     margin-bottom: 0.8rem;
 }
+.tr-panel a { color: var(--tr-gold); }
 
 div[data-testid="stAlertContainer"] {
     background: rgba(198, 161, 91, 0.08) !important;
@@ -305,7 +314,9 @@ div[data-testid="stAlertContainer"] svg { fill: var(--tr-gold) !important; }
 
 _LOADING_HTML = """
 <div class="tr-loading">
-    <p class="tr-loading-label">{label}<span class="tr-dots"><span>.</span><span>.</span><span>.</span></span></p>
+    <p class="tr-loading-label">{label}<span class="tr-dots">
+        <span>.</span><span>.</span><span>.</span>
+    </span></p>
     <div class="tr-loading-track">
         <div class="tr-loading-fill"><span class="tr-loading-spark"></span></div>
     </div>
@@ -317,17 +328,26 @@ _LOADING_HTML = """
 
 
 def _build_orchestrator() -> tuple[TrendoraOrchestrator, str | None]:
-    """Returns (orchestrator, warning). Falls back to mock if the provider errors out."""
+    """Returns (orchestrator, warning). Falls back to a mock LLM if the provider
+    errors out; the page-fetch layer is independent and always runs for real
+    unless TRENDORA_FETCH_MODE=mock."""
+    fetcher = get_fetcher(FETCH_MODE)
     try:
         client = get_client(PROVIDER)
-        return TrendoraOrchestrator(client, TrendoraMemory(customer_id="web_guest")), None
+        orchestrator = TrendoraOrchestrator(
+            client, TrendoraMemory(account_id="web_guest"), fetcher, SEC_EDGAR_CONTACT_EMAIL
+        )
+        return orchestrator, None
     except Exception as exc:  # noqa: BLE001 - surfaced to the user, not swallowed
         client = get_client("mock")
+        orchestrator = TrendoraOrchestrator(
+            client, TrendoraMemory(account_id="web_guest"), fetcher, SEC_EDGAR_CONTACT_EMAIL
+        )
         warning = (
             f"Could not start the '{PROVIDER}' provider ({exc}). "
-            "Falling back to mock responses — set GROQ_API_KEY in this app's secrets to use a real model."
+            "Falling back to mock LLM responses — set GROQ_API_KEY in this app's secrets to use a real model."
         )
-        return TrendoraOrchestrator(client, TrendoraMemory(customer_id="web_guest")), warning
+        return orchestrator, warning
 
 
 def _panel(label: str, rows: list[tuple[str, str]], extra_class: str = "") -> str:
@@ -337,17 +357,42 @@ def _panel(label: str, rows: list[tuple[str, str]], extra_class: str = "") -> st
     return f'<div class="tr-panel {extra_class}"><div class="tr-label">{label}</div>{body}</div>'
 
 
+def _links_html(urls: list[str]) -> str:
+    return "<br>".join(f'<a href="{u}" target="_blank">{u}</a>' for u in urls) if urls else "—"
+
+
 def _render_result(result: dict) -> None:
-    intake, research, rec = result["intake"], result["research"], result["recommendation"]
+    intake = result["account_intake"]
+    research = result["company_research"]
+    competitor = result["competitor"]
+    rec = result["sales_recommendation"]
+    report = result["report"]
 
     st.markdown(
         _panel(
-            "Client Intake",
+            "Account Snapshot",
             [
-                ("Goal", intake.get("customer_goal")),
-                ("Budget", intake.get("budget")),
-                ("Urgency", intake.get("urgency_level")),
-                ("Emotional drivers", ", ".join(intake.get("emotional_drivers") or []) or "—"),
+                ("Selling", intake.get("rep_product_name")),
+                ("Category", intake.get("product_category")),
+                ("Target contact", intake.get("target_customer_name")),
+                ("Research priorities", ", ".join(intake.get("research_priorities") or []) or "—"),
+            ],
+        ),
+        unsafe_allow_html=True,
+    )
+
+    leadership = ", ".join(
+        f"{p.get('name')} ({p.get('title')})" for p in research.get("leadership", []) if p.get("name")
+    )
+    st.markdown(
+        _panel(
+            "Company Research",
+            [
+                ("Strategy", research.get("company_strategy")),
+                ("Key initiatives", ", ".join(research.get("key_initiatives") or []) or "—"),
+                ("Leadership", leadership or "—"),
+                ("Financials", research.get("financial_summary")),
+                ("Confidence", research.get("confidence")),
             ],
         ),
         unsafe_allow_html=True,
@@ -355,25 +400,30 @@ def _render_result(result: dict) -> None:
 
     st.markdown(
         _panel(
-            "Market Research",
+            "Competitive Landscape",
             [
-                ("Hype cycle", research.get("hype_cycle_analysis")),
-                ("Scarcity score", research.get("scarcity_score")),
-                ("Drop timing", research.get("drop_timing")),
-                ("Risks", ", ".join(research.get("risks") or []) or "—"),
+                ("Landscape", competitor.get("competitive_landscape")),
+                ("Differentiation angle", competitor.get("differentiation_angle")),
             ],
         ),
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        f'<div class="tr-panel tr-recommendation"><div class="tr-label">Concierge Recommendation</div>'
-        f'<div class="tr-verdict">"{rec.get("recommendation")}"</div>'
+        f'<div class="tr-panel tr-recommendation"><div class="tr-label">One-Page Account Brief</div>'
+        f'<div class="tr-verdict">"{report.get("recommended_strategy")}"</div>'
         + "".join(
             f'<div class="tr-row"><span class="tr-key">{key}</span>{value}</div>'
             for key, value in [
-                ("Reasoning", rec.get("reasoning")),
+                ("Company strategy", report.get("company_strategy")),
+                (
+                    "Initiatives & compliance",
+                    ", ".join(report.get("initiatives_and_compliance") or []) or None,
+                ),
+                ("Competitive mentions", ", ".join(report.get("competitive_mentions") or []) or None),
+                ("Financials", report.get("financial_summary")),
                 ("Next steps", rec.get("next_steps")),
+                ("Action links", _links_html(report.get("action_links") or [])),
             ]
             if value
         )
@@ -400,7 +450,7 @@ _PDF_CHAR_MAP = str.maketrans(
         "—": "-",
         "…": "...",
         "•": "-",
-        " ": " ",
+        " ": " ",
     }
 )
 
@@ -411,7 +461,7 @@ def _pdf_text(value: object) -> str:
 
 
 def _slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "item"
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "account"
 
 
 def _pdf_section(pdf: FPDF, title: str, rows: list[tuple[str, str]], verdict: str | None = None) -> None:
@@ -444,8 +494,9 @@ def _pdf_section(pdf: FPDF, title: str, rows: list[tuple[str, str]], verdict: st
     pdf.ln(4)
 
 
-def _build_pdf(product_name: str, result: dict, followup: dict | None = None) -> bytes:
-    intake, research, rec = result["intake"], result["research"], result["recommendation"]
+def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> bytes:
+    report = result["report"]
+    rec = result["sales_recommendation"]
 
     pdf = FPDF(unit="mm", format="A4")
     pdf.set_auto_page_break(auto=True, margin=20)
@@ -458,7 +509,7 @@ def _build_pdf(product_name: str, result: dict, followup: dict | None = None) ->
 
     pdf.set_font("Times", "I", 10)
     pdf.set_text_color(*_PDF_MUTED)
-    pdf.cell(0, 6, "Private Concierge for Limited-Release Acquisitions", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 6, "Account Intelligence Brief", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(2)
 
     pdf.set_draw_color(*_PDF_GOLD)
@@ -469,38 +520,44 @@ def _build_pdf(product_name: str, result: dict, followup: dict | None = None) ->
 
     pdf.set_font("Times", "", 10)
     pdf.set_text_color(*_PDF_MUTED)
-    pdf.cell(0, 6, _pdf_text(f"Item of Interest: {product_name}"), new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, _pdf_text(f"Target Account: {company_url}"), new_x="LMARGIN", new_y="NEXT")
     pdf.cell(0, 6, f"Prepared {datetime.now().strftime('%B %d, %Y')}", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(4)
 
     _pdf_section(
         pdf,
-        "Client Intake",
+        "Company Strategy",
         [
-            ("Goal", intake.get("customer_goal")),
-            ("Budget", intake.get("budget")),
-            ("Urgency", intake.get("urgency_level")),
-            ("Emotional drivers", ", ".join(intake.get("emotional_drivers") or []) or None),
+            ("Initiatives & compliance", ", ".join(report.get("initiatives_and_compliance") or []) or None),
+            ("Financial summary", report.get("financial_summary")),
         ],
+        verdict=report.get("company_strategy"),
+    )
+    leadership_text = "; ".join(
+        f"{p.get('name')} ({p.get('title')}) — {p.get('quote_or_note')}".strip(" —")
+        for p in report.get("leadership_information", [])
+        if p.get("name")
     )
     _pdf_section(
         pdf,
-        "Market Research",
-        [
-            ("Hype cycle", research.get("hype_cycle_analysis")),
-            ("Scarcity score", research.get("scarcity_score")),
-            ("Drop timing", research.get("drop_timing")),
-            ("Risks", ", ".join(research.get("risks") or []) or None),
-        ],
+        "Leadership Information",
+        [("Key leaders", leadership_text or None)],
     )
     _pdf_section(
         pdf,
-        "Concierge Recommendation",
-        [
-            ("Reasoning", rec.get("reasoning")),
-            ("Next steps", rec.get("next_steps")),
-        ],
-        verdict=rec.get("recommendation"),
+        "Competitive Mentions",
+        [("Notable mentions", ", ".join(report.get("competitive_mentions") or []) or None)],
+    )
+    _pdf_section(
+        pdf,
+        "Recommended Strategy",
+        [("Next steps", rec.get("next_steps"))],
+        verdict=report.get("recommended_strategy"),
+    )
+    _pdf_section(
+        pdf,
+        "Action Links",
+        [("Sources used", "\n".join(report.get("action_links") or []) or None)],
     )
 
     if followup:
@@ -508,17 +565,16 @@ def _build_pdf(product_name: str, result: dict, followup: dict | None = None) ->
             pdf,
             "Revised Counsel",
             [
-                ("Addressing your concern", followup.get("objection_handling")),
-                ("Approach going forward", followup.get("strategy_adaptation")),
+                ("Addressing the objection", followup.get("objection_handling")),
                 ("Next steps", followup.get("next_steps")),
             ],
-            verdict=followup.get("recommendation"),
+            verdict=followup.get("recommended_approach"),
         )
 
     return bytes(pdf.output())
 
 
-st.set_page_config(page_title="Trendora — Sales Concierge", page_icon="💎", layout="centered")
+st.set_page_config(page_title="Trendora — Account Intelligence", page_icon="💎", layout="centered")
 st.markdown(THEME_CSS, unsafe_allow_html=True)
 
 st.markdown(
@@ -526,8 +582,8 @@ st.markdown(
     <div class="tr-hero">
         <p class="tr-mark">Trendora</p>
         <hr class="tr-rule" />
-        <p class="tr-tagline">Private Concierge for Limited-Release Acquisitions</p>
-        <p class="tr-provider">Advised by <b>{PROVIDER}</b></p>
+        <p class="tr-tagline">AI-Powered Account Intelligence for B2B Sales Reps</p>
+        <p class="tr-provider">Advised by <b>{PROVIDER}</b> · Fetching pages via <b>{FETCH_MODE}</b></p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -535,34 +591,48 @@ st.markdown(
 
 if "orchestrator" not in st.session_state:
     st.session_state.orchestrator = None
-    st.session_state.product_name = None
+    st.session_state.company_url = None
     st.session_state.result = None
     st.session_state.warning = None
     st.session_state.followup = None
 
 with st.form("intake_form"):
-    product_name = st.text_input("Item of Interest", placeholder="e.g. Aurora X1 Limited Sneaker Drop")
-    user_message = st.text_area(
-        "Tell Us What You're After",
-        placeholder=(
-            "e.g. I need these before Friday, budget around $400, "
-            "it's for my collection not resale."
-        ),
+    rep_product_name = st.text_input("What Are You Selling", placeholder="e.g. CloudGuard Endpoint Security")
+    value_proposition = st.text_area(
+        "Value Proposition",
+        placeholder="e.g. Cuts endpoint breach response time from days to minutes",
     )
-    submitted = st.form_submit_button("Consult Trendora")
+    target_customer_name = st.text_input("Target Customer / Role", placeholder="e.g. VP of IT Security")
+    product_category = st.text_input(
+        "Product Category (optional)", placeholder="Leave blank to let the agent infer it"
+    )
+    company_url = st.text_input("Target Company URL", placeholder="https://www.example-prospect.com")
+    competitor_urls_raw = st.text_area(
+        "Competitor URLs (one per line)",
+        placeholder="https://www.competitor-a.com\nhttps://www.competitor-b.com",
+    )
+    submitted = st.form_submit_button("Research This Account")
 
 if submitted:
-    if not product_name.strip() or not user_message.strip():
-        st.warning("Enter both an item and a message first.")
+    competitor_urls = [u.strip() for u in competitor_urls_raw.splitlines() if u.strip()]
+    if not rep_product_name.strip() or not value_proposition.strip() or not company_url.strip():
+        st.warning("Enter at least what you're selling, your value proposition, and the target company URL.")
     else:
         loading = st.empty()
-        loading.markdown(_LOADING_HTML.format(label="Consulting Trendora"), unsafe_allow_html=True)
+        loading.markdown(_LOADING_HTML.format(label="Researching Account"), unsafe_allow_html=True)
         time.sleep(0.35)  # guarantee the widget paints before a fast response clears it
         orchestrator, warning = _build_orchestrator()
-        result = orchestrator.run_scenario(user_message, product_name)
+        result = orchestrator.run_account_brief(
+            rep_product_name=rep_product_name,
+            value_proposition=value_proposition,
+            target_customer_name=target_customer_name,
+            company_url=company_url,
+            competitor_urls=competitor_urls,
+            product_category=product_category,
+        )
         loading.empty()
         st.session_state.orchestrator = orchestrator
-        st.session_state.product_name = product_name
+        st.session_state.company_url = company_url
         st.session_state.result = result
         st.session_state.warning = warning
         st.session_state.followup = None
@@ -576,34 +646,31 @@ if st.session_state.result:
     st.markdown('<div class="tr-divider">• • •</div>', unsafe_allow_html=True)
     with st.form("objection_form"):
         objection_text = st.text_input(
-            "Have a Reservation?",
-            placeholder="e.g. That feels like a lot to spend on shoes I'd only wear a few times.",
+            "Prospect Pushed Back?",
+            placeholder="e.g. We already renewed our contract with our current vendor last quarter.",
         )
-        objection_submitted = st.form_submit_button("Share Your Concern")
+        objection_submitted = st.form_submit_button("Log Their Objection")
 
     if objection_submitted:
         if not objection_text.strip():
-            st.warning("Enter a concern first.")
+            st.warning("Enter the objection first.")
         else:
             loading = st.empty()
-            loading.markdown(_LOADING_HTML.format(label="Reconsidering"), unsafe_allow_html=True)
+            loading.markdown(_LOADING_HTML.format(label="Reconsidering Approach"), unsafe_allow_html=True)
             time.sleep(0.35)  # guarantee the widget paints before a fast response clears it
-            followup = st.session_state.orchestrator.handle_objection(
-                st.session_state.product_name, objection_text
-            )
+            followup = st.session_state.orchestrator.handle_prospect_objection(objection_text)
             loading.empty()
             st.session_state.followup = followup
 
     if st.session_state.followup:
         f = st.session_state.followup
         st.markdown(
-            f'<div class="tr-panel tr-recommendation"><div class="tr-label">Revised Counsel</div>'
-            f'<div class="tr-verdict">"{f.get("recommendation")}"</div>'
+            f'<div class="tr-panel tr-recommendation"><div class="tr-label">Revised Approach</div>'
+            f'<div class="tr-verdict">"{f.get("recommended_approach")}"</div>'
             + "".join(
                 f'<div class="tr-row"><span class="tr-key">{key}</span>{value}</div>'
                 for key, value in [
-                    ("Addressing your concern", f.get("objection_handling")),
-                    ("Approach going forward", f.get("strategy_adaptation")),
+                    ("Addressing the objection", f.get("objection_handling")),
                     ("Next steps", f.get("next_steps")),
                 ]
                 if value
@@ -612,14 +679,13 @@ if st.session_state.result:
             unsafe_allow_html=True,
         )
 
-    pdf_bytes = _build_pdf(
-        st.session_state.product_name, st.session_state.result, st.session_state.followup
-    )
+    pdf_bytes = _build_pdf(st.session_state.company_url, st.session_state.result, st.session_state.followup)
+    company_slug = _slugify(urlparse(st.session_state.company_url).netloc or st.session_state.company_url)
     _, pdf_col, _ = st.columns([1, 2, 1])
     with pdf_col:
         st.download_button(
-            "Download Consultation (PDF)",
+            "Download Account Brief (PDF)",
             data=pdf_bytes,
-            file_name=f"trendora-{_slugify(st.session_state.product_name)}.pdf",
+            file_name=f"trendora-{company_slug}-brief.pdf",
             mime="application/pdf",
         )

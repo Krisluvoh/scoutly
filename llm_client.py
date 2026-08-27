@@ -16,11 +16,11 @@ talks to a specific model API, so the same agent code can run against:
 
 This satisfies the "Production Deployment Considerations" rubric criterion:
 the system is not hard-wired to a single vendor, which matters for cost,
-rate-limit, and outage resilience in a real hype-drop sales tool.
+rate-limit, and outage resilience in a real B2B account-research tool.
 
 Note on architecture: the same idea can be built with full LangChain chains
 (ChatPromptTemplate | model | parser) instead. Trendora's pipeline is a
-fixed, non-branching three-step sequence (a "chain", not an "agent" in the
+fixed, non-branching five-step sequence (a "chain", not an "agent" in the
 tool-calling sense), so a thin custom provider abstraction was simpler here
 — no dynamic tool selection means no need for a heavier framework. The
 Groq option below reuses langchain-groq's ChatGroq under the hood as the
@@ -32,6 +32,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import re
 from abc import ABC, abstractmethod
 
 
@@ -122,73 +123,110 @@ class MockClient(LLMClient):
     """
 
     def generate(self, system_prompt: str, user_message: str) -> str:
-        role = "intake"
-        if "Research Agent" in system_prompt:
-            role = "research"
-        elif "Recommendation Agent" in system_prompt:
-            role = "recommendation"
+        # Match only the opening "You are the <Role> Agent..." sentence —
+        # a naive substring search misfires because agents' own prompts
+        # mention *other* agents by full name while describing handoffs
+        # (e.g. the Report Agent's prompt says "the Company Research
+        # Agent's strategy summary"), which would misclassify it.
+        opening_match = re.match(r"You are the (.+?) Agent\b", system_prompt)
+        role_label = opening_match.group(1) if opening_match else "Account Intake"
+        role = {
+            "Account Intake": "account_intake",
+            "Company Research": "company_research",
+            "Competitor": "competitor",
+            "Sales Recommendation": "sales_recommendation",
+            "Report": "report",
+        }.get(role_label, "account_intake")
 
-        if role == "intake":
+        if role == "account_intake":
             payload = {
-                "customer_goal": "Secure a limited-release item before sellout",
-                "budget": "$400-$600",
-                "urgency_level": "high",
-                "preferences": [
-                    "limited edition",
-                    "resale-safe",
-                    "authentic retail channel",
+                "rep_product_name": "CloudGuard Endpoint Security",
+                "product_category": "Cybersecurity / Endpoint Protection",
+                "value_proposition": "Cuts endpoint breach response time from days to minutes",
+                "target_customer_name": "VP of IT Security",
+                "company_url": "https://example-prospect.com",
+                "competitor_urls": ["https://example-competitor-a.com"],
+                "missing_info": ["exact team size", "current security vendor"],
+                "research_priorities": [
+                    "recent leadership changes",
+                    "compliance posture",
+                    "hiring in security/IT",
                 ],
-                "constraints": [
-                    "must ship before an event date",
-                    "avoid resale markup over 20%",
-                ],
-                "missing_info": ["exact size/spec needed", "preferred retailer"],
-                "emotional_drivers": ["fear of missing out", "collector pride"],
-                "objection_patterns": ["price sensitivity if hype fades"],
             }
-        elif role == "research":
+        elif role == "company_research":
             payload = {
-                "attributes_to_research": [
-                    "scarcity",
-                    "resale trend",
-                    "brand hype trajectory",
-                ],
-                "hype_cycle_analysis": "Demand is in the acceleration phase with rising search interest",
-                "scarcity_score": "8/10",
-                "drop_timing": "Next restock window uncertain; primary drop likely sells out within hours",
-                "product_comparison": [
+                "company_strategy": "Expanding into mid-market accounts while investing in data compliance",
+                "key_initiatives": ["Announced SOC 2 Type II certification", "Opened a new EU data center"],
+                "compliance_mentions": ["References GDPR compliance on its trust page"],
+                "leadership": [
                     {
-                        "name": "Primary target item",
-                        "hype": "very high",
-                        "price_trend": "rising",
-                    },
+                        "name": "Jordan Lee",
+                        "title": "VP of IT Security",
+                        "quote_or_note": "Quoted in a press release on data center expansion",
+                    }
+                ],
+                "financial_summary": "No public filings found; appears to be privately held",
+                "confidence": "medium",
+                "sources": ["https://example-prospect.com", "https://example-prospect.com/press"],
+            }
+        elif role == "competitor":
+            payload = {
+                "competitors": [
                     {
-                        "name": "Comparable alternative",
-                        "hype": "moderate",
-                        "price_trend": "stable",
-                    },
+                        "name": "Example Competitor A",
+                        "url": "https://example-competitor-a.com",
+                        "summary": (
+                            "Positions itself as the enterprise-scale option with a longer deployment cycle"
+                        ),
+                        "notable_mentions": ["Recently discussed integration challenges on its blog"],
+                    }
                 ],
-                "collector_value": "Strong secondary-market retention historically",
-                "risks": [
-                    "price spike post-sellout",
-                    "counterfeit resale risk",
-                    "hype collapse if trend shifts",
+                "competitive_landscape": (
+                    "The prospect's compliance focus is a gap competitors haven't emphasized"
+                ),
+                "differentiation_angle": "Lead with faster time-to-compliance rather than raw feature count",
+                "sources": ["https://example-competitor-a.com"],
+            }
+        elif role == "sales_recommendation":
+            payload = {
+                "talking_points": [
+                    "Their recent SOC 2 certification suggests compliance speed will resonate",
+                    "New EU data center signals expansion — relevant to data residency features",
                 ],
-                "confidence": "medium-high",
+                "anticipated_objections": ["May already be mid-cycle with an existing vendor"],
+                "recommended_approach": "Lead with compliance/time-to-certify value prop, not price",
+                "time_sensitive_signals": [
+                    "New EU data center opening — good timing for a data-residency pitch"
+                ],
+                "next_steps": "Request a 20-minute intro call with the VP of IT Security",
+                "objection_handling": (
+                    "If a current vendor is mentioned, ask what their SOC 2 renewal timeline looks like"
+                ),
             }
         else:
             payload = {
-                "recommendation": "Buy now through an authenticated primary channel before the drop closes",
-                "reasoning": (
-                    "High scarcity score and accelerating hype trend indicate a narrow acquisition window"
+                "company_strategy": "Expanding into mid-market accounts while investing in data compliance",
+                "initiatives_and_compliance": [
+                    "Announced SOC 2 Type II certification",
+                    "References GDPR compliance on its trust page",
+                ],
+                "competitive_mentions": ["Competitor A has publicly discussed integration challenges"],
+                "leadership_information": [
+                    {
+                        "name": "Jordan Lee",
+                        "title": "VP of IT Security",
+                        "quote_or_note": "Quoted in a press release on data center expansion",
+                    }
+                ],
+                "financial_summary": "No public filings found; appears to be privately held",
+                "recommended_strategy": (
+                    "Lead with compliance/time-to-certify value prop; request a short intro call"
                 ),
-                "objection_handling": (
-                    "If price is a concern, offer the comparable alternative with stabler pricing"
-                ),
-                "strategy_adaptation": (
-                    "Shift to conservative/budget framing if user repeats price objections"
-                ),
-                "next_steps": "Confirm size/spec, complete purchase, set a drop alert for backup options",
+                "action_links": [
+                    "https://example-prospect.com",
+                    "https://example-prospect.com/press",
+                    "https://example-competitor-a.com",
+                ],
             }
 
         payload["_mock"] = True

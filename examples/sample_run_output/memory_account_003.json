@@ -1,0 +1,34 @@
+{
+  "account_id": "account_003",
+  "account_profile": {
+    "rep_product_name": "CloudGuard Endpoint Security",
+    "product_category": "Cybersecurity / Endpoint Protection",
+    "value_proposition": "Cuts endpoint breach response time from days to minutes",
+    "target_customer_name": "VP of IT Security",
+    "company_url": "https://example-prospect.com",
+    "last_differentiation_angle": "Lead with faster time-to-compliance rather than raw feature count",
+    "last_recommended_approach": "Lead with compliance/time-to-certify value prop, not price"
+  },
+  "known_account_facts": [
+    "Jordan Lee (VP of IT Security)",
+    "Announced SOC 2 Type II certification",
+    "Opened a new EU data center"
+  ],
+  "past_prospect_objections": [
+    "We're already mid-migration to a competitor's platform."
+  ],
+  "research_history": [
+    {
+      "company_url": "https://www.snowflake.com",
+      "confidence": "medium",
+      "summary": "Expanding into mid-market accounts while investing in data compliance",
+      "timestamp": "2026-08-27T00:33:36.991384+00:00"
+    }
+  ],
+  "account_signals": {
+    "https://www.snowflake.com": {
+      "last_financial_summary": "No public filings found; appears to be privately held"
+    }
+  },
+  "last_updated": "2026-08-27T00:33:36.992506+00:00"
+}
