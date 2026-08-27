@@ -30,33 +30,42 @@ load_dotenv()
 SCENARIOS = [
     {
         "account_id": "account_001",
-        "rep_product_name": "CloudGuard Endpoint Security",
-        "product_category": "Cybersecurity / Endpoint Protection",
-        "value_proposition": "Cuts endpoint breach response time from days to minutes",
-        "target_customer_name": "VP of IT Security",
-        "company_url": "https://www.paloaltonetworks.com",
-        "competitor_urls": ["https://www.crowdstrike.com", "https://www.sentinelone.com"],
-        "follow_up_objection": "We already renewed our contract with our current vendor last quarter.",
+        "rep_product_name": "Trendora Curated Sourcing",
+        "product_category": "Trend-Item Sourcing & Curation Service",
+        "value_proposition": (
+            "We find and secure hard-to-find, high-margin trend inventory so your buying "
+            "team doesn't have to chase drops themselves"
+        ),
+        "target_customer_name": "Head Buyer",
+        "company_url": "https://www.urbanoutfitters.com",
+        "competitor_urls": ["https://www.freepeople.com", "https://www.princesspolly.com"],
+        "follow_up_objection": "We already have an informal relationship with a few boutique suppliers.",
     },
     {
         "account_id": "account_002",
-        "rep_product_name": "Meridian Payroll Cloud",
-        "product_category": "HR / Payroll SaaS",
-        "value_proposition": "Automates multi-state payroll compliance for growing companies",
-        "target_customer_name": "Head of People Operations",
-        "company_url": "https://www.gusto.com",
-        "competitor_urls": ["https://www.rippling.com"],
+        "rep_product_name": "Trendora Curated Sourcing",
+        "product_category": "Trend-Item Sourcing & Curation Service",
+        "value_proposition": (
+            "We monitor scarcity and drop timing across wholesale, liquidation, and boutique "
+            "channels so you always know where to source the next trend item at the best margin"
+        ),
+        "target_customer_name": "Merchandising Director",
+        "company_url": "https://www.asos.com",
+        "competitor_urls": ["https://www.prettylittlething.com"],
         "follow_up_objection": None,
     },
     {
         "account_id": "account_003",
-        "rep_product_name": "Nimbus Data Warehouse",
-        "product_category": "Cloud Data Platform",
-        "value_proposition": "Cuts analytics query costs by consolidating warehouses into one platform",
-        "target_customer_name": "Director of Data Engineering",
-        "company_url": "https://www.snowflake.com",
-        "competitor_urls": ["https://www.databricks.com"],
-        "follow_up_objection": "We're already mid-migration to a competitor's platform.",
+        "rep_product_name": "Trendora Curated Sourcing",
+        "product_category": "Trend-Item Sourcing & Curation Service",
+        "value_proposition": (
+            "We turn liquidation and overstock inventory into curated, sellable drops "
+            "without your team taking on the sourcing risk"
+        ),
+        "target_customer_name": "VP of Merchandising",
+        "company_url": "https://www.thredup.com",
+        "competitor_urls": ["https://www.therealreal.com"],
+        "follow_up_objection": "We're already committed to a liquidation vendor through year-end.",
     },
 ]
 

@@ -37,6 +37,8 @@ def test_mock_client_sales_recommendation_shape():
     data = json.loads(raw)
     assert "recommended_approach" in data
     assert "next_steps" in data
+    assert "sourcing_recommendation" in data
+    assert data["sourcing_recommendation"]["channel_type"]
 
 
 def test_mock_client_report_shape():
@@ -45,6 +47,8 @@ def test_mock_client_report_shape():
     data = json.loads(raw)
     assert "action_links" in data
     assert "leadership_information" in data
+    assert "sourcing_recommendation" in data
+    assert data["sourcing_recommendation"]["recommended_platforms"]
 
 
 def test_get_client_factory_mock():

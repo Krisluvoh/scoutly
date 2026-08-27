@@ -27,6 +27,7 @@ from agents.report_agent import ReportAgent
 from agents.sales_recommendation_agent import SalesRecommendationAgent
 from llm_client import LLMClient
 from memory import TrendoraMemory
+from sourcing_channels import SOURCING_CHANNELS
 from web_research import Fetcher, PageContent, get_fetcher, lookup_public_filings
 
 # Homepage + up to this many discovered subpages (leadership/press/about/etc)
@@ -140,6 +141,9 @@ class TrendoraOrchestrator:
             "intake_summary": intake_output,
             "company_research_summary": company_research_output,
             "competitor_summary": competitor_output,
+            # Static reference data, not fetched — grounds the agent's channel/platform
+            # pick in real options instead of letting it invent platform names.
+            "sourcing_channels": SOURCING_CHANNELS,
         }
         recommendation_output = self.sales_recommendation_agent.run(self.memory, recommendation_input)
         self.memory.update_from_sales_recommendation(recommendation_output)

@@ -409,6 +409,20 @@ def _render_result(result: dict) -> None:
         unsafe_allow_html=True,
     )
 
+    sourcing = report.get("sourcing_recommendation") or rec.get("sourcing_recommendation")
+    if sourcing:
+        st.markdown(
+            _panel(
+                "Recommended Sourcing Strategy",
+                [
+                    ("Channel", sourcing.get("channel_type")),
+                    ("Platforms", ", ".join(sourcing.get("recommended_platforms") or []) or "—"),
+                    ("Margin notes", sourcing.get("margin_notes")),
+                ],
+            ),
+            unsafe_allow_html=True,
+        )
+
     st.markdown(
         f'<div class="tr-panel tr-recommendation"><div class="tr-label">One-Page Account Brief</div>'
         f'<div class="tr-verdict">"{report.get("recommended_strategy")}"</div>'
@@ -548,6 +562,17 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
         "Competitive Mentions",
         [("Notable mentions", ", ".join(report.get("competitive_mentions") or []) or None)],
     )
+    sourcing = report.get("sourcing_recommendation") or rec.get("sourcing_recommendation")
+    if sourcing:
+        _pdf_section(
+            pdf,
+            "Recommended Sourcing Strategy",
+            [
+                ("Channel", sourcing.get("channel_type")),
+                ("Platforms", ", ".join(sourcing.get("recommended_platforms") or []) or None),
+                ("Margin notes", sourcing.get("margin_notes")),
+            ],
+        )
     _pdf_section(
         pdf,
         "Recommended Strategy",
@@ -597,19 +622,21 @@ if "orchestrator" not in st.session_state:
     st.session_state.followup = None
 
 with st.form("intake_form"):
-    rep_product_name = st.text_input("What Are You Selling", placeholder="e.g. CloudGuard Endpoint Security")
+    rep_product_name = st.text_input(
+        "What Are You Selling", placeholder="e.g. Trendora Curated Sourcing"
+    )
     value_proposition = st.text_area(
         "Value Proposition",
-        placeholder="e.g. Cuts endpoint breach response time from days to minutes",
+        placeholder="e.g. We find and secure hard-to-find trend inventory so your buyers don't have to",
     )
-    target_customer_name = st.text_input("Target Customer / Role", placeholder="e.g. VP of IT Security")
+    target_customer_name = st.text_input("Target Customer / Role", placeholder="e.g. Head Buyer")
     product_category = st.text_input(
         "Product Category (optional)", placeholder="Leave blank to let the agent infer it"
     )
-    company_url = st.text_input("Target Company URL", placeholder="https://www.example-prospect.com")
+    company_url = st.text_input("Target Company URL", placeholder="https://www.example-boutique-retailer.com")
     competitor_urls_raw = st.text_area(
         "Competitor URLs (one per line)",
-        placeholder="https://www.competitor-a.com\nhttps://www.competitor-b.com",
+        placeholder="https://www.retail-competitor-a.com\nhttps://www.retail-competitor-b.com",
     )
     submitted = st.form_submit_button("Research This Account")
 
@@ -647,7 +674,7 @@ if st.session_state.result:
     with st.form("objection_form"):
         objection_text = st.text_input(
             "Prospect Pushed Back?",
-            placeholder="e.g. We already renewed our contract with our current vendor last quarter.",
+            placeholder="e.g. We already have an informal relationship with a few boutique suppliers.",
         )
         objection_submitted = st.form_submit_button("Log Their Objection")
 

@@ -89,11 +89,18 @@ def test_sales_recommendation_agent_returns_validated_schema(client, memory):
     agent = SalesRecommendationAgent(client)
     result = agent.run(
         memory,
-        {"intake_summary": {}, "company_research_summary": {}, "competitor_summary": {}},
+        {
+            "intake_summary": {},
+            "company_research_summary": {},
+            "competitor_summary": {},
+            "sourcing_channels": [],
+        },
     )
     assert "recommended_approach" in result
     assert "next_steps" in result
     assert "objection_handling" in result
+    assert "sourcing_recommendation" in result
+    assert result["sourcing_recommendation"]["channel_type"]
 
 
 def test_sales_recommendation_agent_never_leaks_other_role_fields(client, memory):
@@ -117,6 +124,7 @@ def test_report_agent_returns_validated_schema(client, memory):
     assert "action_links" in result
     assert "leadership_information" in result
     assert "recommended_strategy" in result
+    assert "sourcing_recommendation" in result
 
 
 def test_evaluation_scores_are_within_bounds_when_present(client, memory):

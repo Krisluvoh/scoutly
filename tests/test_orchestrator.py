@@ -35,6 +35,7 @@ def test_full_pipeline_produces_all_five_outputs():
     assert result["account_intake"]["rep_product_name"]
     assert result["company_research"]["leadership"]
     assert result["report"]["action_links"]
+    assert result["report"]["sourcing_recommendation"]["channel_type"]
 
 
 def test_memory_updated_after_full_pipeline_run():

@@ -34,6 +34,9 @@ unchanged (do not invent additional names).
 - financial_summary: carry forward the Company Research Agent's financial_summary.
 - recommended_strategy: condense the Sales Recommendation Agent's recommended_approach, \
 top talking points, and time_sensitive_signals into one actionable paragraph.
+- sourcing_recommendation: carry forward the Sales Recommendation Agent's \
+sourcing_recommendation unchanged, if one was given to you (omit it if none was given — \
+do not invent one).
 - action_links: merge every source URL from Company Research and Competitor research into \
 one deduplicated list — this is what lets the rep click through to the original material.
 
@@ -49,6 +52,11 @@ shape:
   ],
   "financial_summary": "",
   "recommended_strategy": "",
+  "sourcing_recommendation": {
+    "channel_type": "",
+    "recommended_platforms": [],
+    "margin_notes": ""
+  },
   "action_links": [],
   "evaluation": {
     "relevance": 0,

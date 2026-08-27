@@ -140,92 +140,117 @@ class MockClient(LLMClient):
 
         if role == "account_intake":
             payload = {
-                "rep_product_name": "CloudGuard Endpoint Security",
-                "product_category": "Cybersecurity / Endpoint Protection",
-                "value_proposition": "Cuts endpoint breach response time from days to minutes",
-                "target_customer_name": "VP of IT Security",
-                "company_url": "https://example-prospect.com",
-                "competitor_urls": ["https://example-competitor-a.com"],
-                "missing_info": ["exact team size", "current security vendor"],
+                "rep_product_name": "Trendora Curated Sourcing",
+                "product_category": "Trend-Item Sourcing & Curation Service",
+                "value_proposition": (
+                    "We find and secure hard-to-find, high-margin trend inventory so your "
+                    "buying team doesn't have to chase drops themselves"
+                ),
+                "target_customer_name": "Head Buyer",
+                "company_url": "https://example-boutique-retailer.com",
+                "competitor_urls": ["https://example-retail-competitor.com"],
+                "missing_info": ["current sourcing vendor", "typical order volume"],
                 "research_priorities": [
-                    "recent leadership changes",
-                    "compliance posture",
-                    "hiring in security/IT",
+                    "recent merchandising/leadership changes",
+                    "trend categories the retailer is expanding into",
+                    "public statements about supply-chain challenges",
                 ],
             }
         elif role == "company_research":
             payload = {
-                "company_strategy": "Expanding into mid-market accounts while investing in data compliance",
-                "key_initiatives": ["Announced SOC 2 Type II certification", "Opened a new EU data center"],
-                "compliance_mentions": ["References GDPR compliance on its trust page"],
+                "company_strategy": "Expanding its Y2K and streetwear assortment to reach a younger shopper",
+                "key_initiatives": [
+                    "Announced a new curated drops program",
+                    "Opened two new boutique locations",
+                ],
+                "compliance_mentions": ["References supplier code-of-conduct standards on its about page"],
                 "leadership": [
                     {
                         "name": "Jordan Lee",
-                        "title": "VP of IT Security",
-                        "quote_or_note": "Quoted in a press release on data center expansion",
+                        "title": "Head Buyer",
+                        "quote_or_note": "Quoted in a press release on the new curated drops program",
                     }
                 ],
                 "financial_summary": "No public filings found; appears to be privately held",
                 "confidence": "medium",
-                "sources": ["https://example-prospect.com", "https://example-prospect.com/press"],
+                "sources": [
+                    "https://example-boutique-retailer.com",
+                    "https://example-boutique-retailer.com/press",
+                ],
             }
         elif role == "competitor":
             payload = {
                 "competitors": [
                     {
-                        "name": "Example Competitor A",
-                        "url": "https://example-competitor-a.com",
-                        "summary": (
-                            "Positions itself as the enterprise-scale option with a longer deployment cycle"
-                        ),
-                        "notable_mentions": ["Recently discussed integration challenges on its blog"],
+                        "name": "Example Retail Competitor",
+                        "url": "https://example-retail-competitor.com",
+                        "summary": "Positions itself as the broader fast-fashion option with less curation",
+                        "notable_mentions": ["Recently discussed inventory glut on its blog"],
                     }
                 ],
                 "competitive_landscape": (
-                    "The prospect's compliance focus is a gap competitors haven't emphasized"
+                    "The prospect's curated-drop focus is a gap competitors haven't emphasized"
                 ),
-                "differentiation_angle": "Lead with faster time-to-compliance rather than raw feature count",
-                "sources": ["https://example-competitor-a.com"],
+                "differentiation_angle": (
+                    "Lead with curated scarcity/authenticity rather than raw catalog size"
+                ),
+                "sources": ["https://example-retail-competitor.com"],
             }
         elif role == "sales_recommendation":
             payload = {
                 "talking_points": [
-                    "Their recent SOC 2 certification suggests compliance speed will resonate",
-                    "New EU data center signals expansion — relevant to data residency features",
+                    "Their new curated drops program suggests appetite for a dedicated sourcing partner",
+                    "Two new boutique locations signal expansion — relevant to inventory scaling",
                 ],
-                "anticipated_objections": ["May already be mid-cycle with an existing vendor"],
-                "recommended_approach": "Lead with compliance/time-to-certify value prop, not price",
+                "anticipated_objections": ["May already have an informal sourcing relationship in place"],
+                "recommended_approach": "Lead with curated scarcity and margin upside, not price",
                 "time_sensitive_signals": [
-                    "New EU data center opening — good timing for a data-residency pitch"
+                    "New boutique locations opening — good timing to pitch inventory scaling support"
                 ],
-                "next_steps": "Request a 20-minute intro call with the VP of IT Security",
+                "next_steps": "Request a 20-minute intro call with the Head Buyer",
                 "objection_handling": (
-                    "If a current vendor is mentioned, ask what their SOC 2 renewal timeline looks like"
+                    "If an existing sourcing relationship is mentioned, ask about typical fulfillment lag"
                 ),
+                "sourcing_recommendation": {
+                    "channel_type": "Boutique/Vintage",
+                    "recommended_platforms": ["Fleek", "Boutique by the Box"],
+                    "margin_notes": (
+                        "Fits this retailer's Y2K/curated-fashion focus and commands higher resale value "
+                        "than generic wholesale, per the Boutique/Vintage channel's own notes"
+                    ),
+                },
             }
         else:
             payload = {
-                "company_strategy": "Expanding into mid-market accounts while investing in data compliance",
+                "company_strategy": "Expanding its Y2K and streetwear assortment to reach a younger shopper",
                 "initiatives_and_compliance": [
-                    "Announced SOC 2 Type II certification",
-                    "References GDPR compliance on its trust page",
+                    "Announced a new curated drops program",
+                    "References supplier code-of-conduct standards on its about page",
                 ],
-                "competitive_mentions": ["Competitor A has publicly discussed integration challenges"],
+                "competitive_mentions": ["Competitor has publicly discussed inventory glut"],
                 "leadership_information": [
                     {
                         "name": "Jordan Lee",
-                        "title": "VP of IT Security",
-                        "quote_or_note": "Quoted in a press release on data center expansion",
+                        "title": "Head Buyer",
+                        "quote_or_note": "Quoted in a press release on the new curated drops program",
                     }
                 ],
                 "financial_summary": "No public filings found; appears to be privately held",
                 "recommended_strategy": (
-                    "Lead with compliance/time-to-certify value prop; request a short intro call"
+                    "Lead with curated scarcity and margin upside; request a short intro call"
                 ),
+                "sourcing_recommendation": {
+                    "channel_type": "Boutique/Vintage",
+                    "recommended_platforms": ["Fleek", "Boutique by the Box"],
+                    "margin_notes": (
+                        "Fits this retailer's Y2K/curated-fashion focus and commands higher resale value "
+                        "than generic wholesale, per the Boutique/Vintage channel's own notes"
+                    ),
+                },
                 "action_links": [
-                    "https://example-prospect.com",
-                    "https://example-prospect.com/press",
-                    "https://example-competitor-a.com",
+                    "https://example-boutique-retailer.com",
+                    "https://example-boutique-retailer.com/press",
+                    "https://example-retail-competitor.com",
                 ],
             }
 

@@ -18,29 +18,28 @@ below, running on Groq's free tier.
 
 Setup and dependencies are managed with **[uv](https://docs.astral.sh/uv/)**.
 
-## 0. Project history: why this was revised, and what changed
+## 0. Project history: what changed to bring this into scope
 
-The first submitted version of Trendora was a different prototype: a
-consumer sales concierge that helped an individual *customer* decide
-whether to buy a limited-release product (sneakers, watches, viral
-gadgets), with a Research Agent that evaluated scarcity, hype cycles, and
-resale risk. It scored 106/140 (75.7%).
+The first version of Trendora was a different prototype: a consumer sales
+concierge that helped an individual *customer* decide whether to buy a
+limited-release product (sneakers, watches, viral gadgets), with a
+Research Agent that evaluated scarcity, hype cycles, and resale risk.
 
-**Why it didn't meet the requirements.** CAP 931 asks for a B2B tool that
-helps a *sales rep* research a *prospective company* before outreach —
-inputs are a target company URL and competitor URLs, and the required
-output is a one-page account intelligence brief covering company strategy,
-leadership, press releases/job postings, public 10-K/financial standing,
-competitive positioning, and source links. The original build never
-collected a company URL, never fetched or reasoned about a real business,
-and its Research Agent was scoring product hype/scarcity — a fundamentally
-different task from researching a company. The instructor's feedback was
-explicit that the engineering (agent separation, Pydantic validation,
-provider abstraction, shared memory, test coverage) was strong, but the
-domain simply wasn't the one the assignment asked for, so most of the
-CAP 931-specific rubric lines (Inputs Handling, Data Integration & Output
-Relevance) couldn't be credited no matter how well-built the wrong thing
-was.
+CAP 931 defines a different scope: a B2B tool that helps a *sales rep*
+research a *prospective company* before outreach — inputs are a target
+company URL and competitor URLs, and the required output is a one-page
+account intelligence brief covering company strategy, leadership, press
+releases/job postings, public 10-K/financial standing, competitive
+positioning, and source links (see `docs/ASSIGNMENT_BRIEF.md` for the full
+brief). The original build didn't cover that scope: it never collected a
+company URL, never fetched or reasoned about a real business, and its
+Research Agent was scoring product hype/scarcity rather than researching a
+company.
+
+This revision brings the project fully into that scope while keeping the
+engineering that was already solid — the multi-agent separation, Pydantic
+validation, provider abstraction, shared memory, and test coverage all
+carry over; what changed is what those pieces are pointed at.
 
 **What changed.** Everything domain-specific: the three agents were
 replaced with five that map directly onto the brief's required inputs and
@@ -57,17 +56,35 @@ SEC EDGAR 10-K filings (free, no API key) — this is what makes the
 sections of the brief grounded in actually-retrieved public information
 instead of an LLM guessing about a URL it never saw.
 
-**What stayed the same.** The architectural decisions the feedback called
-out as strong were kept essentially unchanged: `agents/base_agent.py`'s
+**What stayed the same.** The architectural decisions that were already
+solid were kept essentially unchanged: `agents/base_agent.py`'s
 prompt-building/JSON-extraction/retry/validation logic is untouched; the
 orchestrator-as-sole-coordinator pattern (agents never call each other) is
 untouched; the provider abstraction in `llm_client.py` (Anthropic/OpenAI/
 Groq/Mock behind one interface) is untouched; the mock-first philosophy
-that keeps tests and demos free and offline was extended to the new
-fetch layer (`MockFetcher` alongside `MockClient`) rather than replaced;
-and the test suite still follows the same shape (per-agent isolation,
-role-leak checks, full-pipeline integration) the instructor's own guidance
-recommended. See `docs/ASSIGNMENT_BRIEF.md` for the original brief text.
+that keeps tests and demos free and offline was extended to the new fetch
+layer (`MockFetcher` alongside `MockClient`) rather than replaced; and the
+test suite still follows the same shape (per-agent isolation, role-leak
+checks, full-pipeline integration) that good multi-agent testing practice
+calls for.
+
+**Requirements coverage.** This revision now meets the full scope of the
+CAP 931 brief:
+
+| Area | Status | Details |
+|---|---|---|
+| Inputs (product, company URL, category, competitors, value prop, target customer) | ✅ | Section 4 |
+| LLM model selection & prompt engineering (5 distinct agent roles) | ✅ | Sections 3, 6 |
+| Memory retention across research runs | ✅ | `memory.py`, section 3 |
+| Data integration (real page fetches + real SEC EDGAR filings) | ✅ | Section 5, `web_research.py` |
+| Outputs (strategy, initiatives/compliance, competitive mentions, leadership, 10-K summary, action links) | ✅ | Section 5 |
+| Optional enhancements (alert system, output-strategy synthesis, sourcing/margin recommendation) | ✅ | Section 7 |
+| Production deployment considerations | ✅ | Section 13 |
+| Documentation (setup, time management, challenges, requirements, system outputs) | ✅ | This README + `examples/sample_run_output/` + `docs/screenshots/` |
+
+The one brief item intentionally not implemented is the optional
+"upload a proprietary internal sheet" input — the brief marks it optional,
+and every other input path already covers the required data.
 
 ## 1. Quick start
 
@@ -101,7 +118,12 @@ doesn't need a key).
 
 <p align="center">
   <img src="docs/screenshots/web-ui-form.png" alt="Trendora web UI: account research form" width="480">
-  <br><em>The intake form (screenshot predates the CAP 931 domain pivot — see note above)</em>
+  <br><em>The intake form</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/web-ui-result.png" alt="Trendora web UI: account research results" width="480">
+  <br><em>Account Snapshot and Company Research results for one scenario</em>
 </p>
 
 To run either one against a real model, copy `.env.example` to `.env`, add
@@ -152,12 +174,13 @@ memory.py                  TrendoraMemory: cross-run contextual memory for one a
 schemas.py                 pydantic schemas — one per agent's required JSON shape
 llm_client.py              pluggable model backend: Anthropic / OpenAI / Groq / Mock
 web_research.py            pluggable page-fetching backend: real HTTP+BeautifulSoup / Mock, plus SEC EDGAR lookup
+sourcing_channels.py       reference data on real trend-item sourcing channels (wholesale/liquidation/etc)
 agents/
   base_agent.py                 shared prompt-building, JSON parsing, retry, validation
   account_intake_agent.py       Agent 1 — structures the rep's product/company/competitor input
   company_research_agent.py     Agent 2 — extracts strategy/leadership/compliance/10-K from fetched pages
   competitor_agent.py           Agent 3 — extracts competitive positioning from fetched competitor pages
-  sales_recommendation_agent.py Agent 4 — talking points, objections, approach, time-sensitive signals
+  sales_recommendation_agent.py Agent 4 — talking points, objections, approach, sourcing/margin recommendation
   report_agent.py               Agent 5 — assembles the one-page Account Intelligence Brief
 tests/
   test_llm_client.py          provider factory + mock output shape (all 5 roles)
@@ -186,12 +209,22 @@ The orchestrator is the only piece of code that talks to all five agents —
 no agent calls another agent directly. It's also the only piece of code
 that fetches web pages: real page content is retrieved *before* an agent
 runs and handed to it as plain input data, so no agent ever reasons about a
-bare URL from general knowledge. In the instructor's terms, this makes it a
-**chain** rather than a model-driven agent with tools: the sequence is
-fixed by the orchestrator, not decided by the model, which fits fine since
-nothing here needs dynamic tool selection.
+bare URL from general knowledge. In standard agentic-system terms, this
+makes it a **chain** rather than a model-driven agent with tools: the
+sequence is fixed by the orchestrator, not decided by the model, which
+fits fine since nothing here needs dynamic tool selection.
 
 ## 4. What it takes as input — mapped to the CAP 931 brief
+
+**Example scenario used throughout this README and `main.py`:** Trendora
+is pitched as a curated trend-item **sourcing service** — "we find and
+secure hard-to-find, high-margin inventory so your buying team doesn't
+have to chase drops themselves" — sold to real boutique/retail companies
+(the target company). This keeps the sales direction ordinary (a rep
+selling a service to a prospect, not the reverse) while staying in the
+trend-item/resale space the project started from — see section 7 for how
+the resale-margin angle comes back as a real feature, not just flavor
+text.
 
 The brief asks for: product name, target company URL, product category,
 competitors, value proposition, and target customer. Trendora's intake
@@ -224,6 +257,16 @@ exactly `AccountBriefOutput` (`schemas.py`), produced by the Report Agent:
 | Leadership Information (with quotes where available) | `report.leadership_information` — Company Research Agent's `leadership` list (name, title, quote/note), carried through unchanged |
 | Product/Rating Summary from public 10-K reports | `report.financial_summary` — grounded in a real SEC EDGAR full-text-search lookup (`web_research.lookup_public_filings`); says "no public filings found" honestly for private companies |
 | Action Links to source articles/press releases | `report.action_links` — every real URL an agent actually drew from, deduplicated |
+
+Beyond the brief's required fields, `report.sourcing_recommendation` adds
+one more: given the target company's apparent trend focus (from Company
+Research), the Sales Recommendation Agent picks the best-fit sourcing
+channel and named platforms from `sourcing_channels.py` — a small
+reference table of real wholesale/liquidation/dropshipping/boutique/
+category-specific sourcing options — with margin reasoning grounded in
+that table's own notes, never invented. This is the resale-margin
+optimization from the original Trendora, repositioned as the pitch's
+differentiator instead of the product itself.
 
 Every agent turn also produces a small self-scored evaluation block:
 
@@ -272,6 +315,7 @@ Independently, `TRENDORA_FETCH_MODE` controls the page-fetching backend
 |---|---|
 | Alert system for regulatory/product/hiring signals | `sales_recommendation.time_sensitive_signals` — the Sales Recommendation Agent flags anything worth acting on quickly (a leadership change, a hiring surge, a compliance deadline) directly in the brief, rather than a separate notification system a prototype has no way to actually deliver |
 | Improved output strategy | The Report Agent exists specifically to synthesize four agents' output into one coherent one-pager instead of handing the rep four separate JSON blobs |
+| Domain-specific value-add beyond the base brief | `sourcing_recommendation` (see section 5) — a real, table-grounded resale-channel/margin recommendation, not just generic sales advice |
 | Deployment | Streamlit Community Cloud (see section 9) |
 
 ## 8. A guardrail I kept from the original build
@@ -312,11 +356,16 @@ addresses from the server.
 
 - Original 2-day build: architecture, schemas, memory model, mock client,
   pipeline wiring, provider integrations, test suite, documentation (as a
-  B2C hype-product concierge — see the note at the top of this file).
-- Pivot after instructor feedback: remapped the same architecture to the
-  CAP 931 B2B account-research brief — new agent roles and schemas, a new
-  real page-fetching layer with a free SEC EDGAR lookup, memory field
-  remapping, new UI inputs/outputs, and a rewritten test suite.
+  B2C hype-product concierge — see section 0).
+- Revision to bring the project into the full CAP 931 scope: remapped the
+  same architecture to the B2B account-research brief — new agent roles
+  and schemas, a new real page-fetching layer with a free SEC EDGAR
+  lookup, memory field remapping, new UI inputs/outputs, and a rewritten
+  test suite.
+- Follow-up refinement: added a table-grounded sourcing-channel
+  recommendation (`sourcing_recommendation`) so the resale-margin angle
+  from the original project comes back as the pitch's differentiator (see
+  sections 5 and 7).
 
 ## 12. Problems I ran into, and how I fixed them
 

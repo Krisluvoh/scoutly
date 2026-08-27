@@ -7,6 +7,12 @@ orchestrator.py). Also the only agent that handles a prospect's objection on
 a follow-up turn (TrendoraOrchestrator.handle_prospect_objection), since
 objection handling is explicitly this agent's job, not a new research pass.
 
+When sourcing_channels.SOURCING_CHANNELS is passed in as reference data,
+this agent also recommends which real sourcing channel (wholesale,
+liquidation, dropshipping, etc — see sourcing_channels.py) best fits the
+target account, grounding margin reasoning in that reference data rather
+than inventing platform names or numbers.
+
 Output is validated against schemas.SalesRecommendationOutput by
 BaseAgent.run().
 """
@@ -34,6 +40,12 @@ customer's role and the company's situation.
 leadership change, a hiring surge in the relevant department, a compliance deadline, a \
 competitor's public stumble) — this is the account-monitoring "alert" a rep would want \
 surfaced immediately, not buried in a report.
+- If SOURCING CHANNELS reference data is given to you in NEW INPUT, produce a \
+sourcing_recommendation: pick the channel_type and recommended_platforms from that list \
+that best fit the target account's apparent trend focus (inferred from the company \
+research given to you), and write margin_notes grounded in that channel's own "notes" \
+field — never invent a platform name or margin figure that isn't in the reference data. \
+If no sourcing channel data is given, omit sourcing_recommendation.
 - Handle objections honestly: if PAST PROSPECT OBJECTIONS appear in MEMORY CONTEXT, or a \
 new one arrives in NEW INPUT, address it plainly in objection_handling rather than \
 ignoring it or being pushy.
@@ -49,6 +61,11 @@ shape:
   "time_sensitive_signals": [],
   "next_steps": "",
   "objection_handling": "",
+  "sourcing_recommendation": {
+    "channel_type": "",
+    "recommended_platforms": [],
+    "margin_notes": ""
+  },
   "evaluation": {
     "relevance": 0,
     "clarity": 0,

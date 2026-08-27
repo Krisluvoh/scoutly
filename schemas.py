@@ -77,6 +77,15 @@ class CompetitorOutput(BaseModel):
     evaluation: Evaluation | None = None
 
 
+class SourcingRecommendation(BaseModel):
+    """Which sourcing channel (see sourcing_channels.py) best fits the
+    target account's apparent trend focus, and why."""
+
+    channel_type: str = ""
+    recommended_platforms: list[str] = Field(default_factory=list)
+    margin_notes: str = ""
+
+
 class SalesRecommendationOutput(BaseModel):
     """Produced by agents/sales_recommendation_agent.py."""
 
@@ -86,6 +95,7 @@ class SalesRecommendationOutput(BaseModel):
     time_sensitive_signals: list[str] = Field(default_factory=list)
     next_steps: str = ""
     objection_handling: str = ""
+    sourcing_recommendation: SourcingRecommendation | None = None
     evaluation: Evaluation | None = None
 
 
@@ -102,6 +112,7 @@ class AccountBriefOutput(BaseModel):
     leadership_information: list[LeadershipContact] = Field(default_factory=list)
     financial_summary: str = ""
     recommended_strategy: str = ""
+    sourcing_recommendation: SourcingRecommendation | None = None
     action_links: list[str] = Field(default_factory=list)
     evaluation: Evaluation | None = None
 
