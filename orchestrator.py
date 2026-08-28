@@ -1,15 +1,15 @@
 """
 orchestrator.py
 ----------------
-Coordinates Trendora's five agents into a single account-research run and
-keeps TrendoraMemory in sync between them. This is the "system" in
+Coordinates Scoutly's five agents into a single account-research run and
+keeps ScoutlyMemory in sync between them. This is the "system" in
 "multi-agent system" — each agent only ever sees its own role's system
 prompt; the orchestrator is what fetches real page content, stitches agent
 outputs together, and is the only piece of code that talks to all five.
 
-In the instructor's chain-vs-agent framing: this is a "chain" (a fixed,
+In standard agentic-system terms, this is a "chain" (a fixed,
 orchestrator-defined sequence), not a model-driven agent-with-tools —
-appropriate since Trendora's workflow doesn't need dynamic tool selection.
+appropriate since Scoutly's workflow doesn't need dynamic tool selection.
 Page fetching happens here, before an agent ever runs, so fetched text is
 just another piece of plain input data to the agent — no tool-calling loop
 needed.
@@ -26,7 +26,7 @@ from agents.competitor_agent import CompetitorAgent
 from agents.report_agent import ReportAgent
 from agents.sales_recommendation_agent import SalesRecommendationAgent
 from llm_client import LLMClient
-from memory import TrendoraMemory
+from memory import ScoutlyMemory
 from sourcing_channels import SOURCING_CHANNELS
 from web_research import Fetcher, PageContent, get_fetcher, lookup_public_filings
 
@@ -35,10 +35,10 @@ from web_research import Fetcher, PageContent, get_fetcher, lookup_public_filing
 _MAX_COMPANY_SUBPAGES = 3
 
 
-class TrendoraOrchestrator:
+class ScoutlyOrchestrator:
     """
     Runs one account's research through all five agents in order and keeps
-    a single TrendoraMemory in sync as each agent's output comes back. One
+    a single ScoutlyMemory in sync as each agent's output comes back. One
     instance = one account's research history; the memory and transcript
     both accumulate across every run_account_brief/handle_prospect_objection
     call made on the same instance.
@@ -47,12 +47,12 @@ class TrendoraOrchestrator:
     def __init__(
         self,
         client: LLMClient,
-        memory: TrendoraMemory | None = None,
+        memory: ScoutlyMemory | None = None,
         fetcher: Fetcher | None = None,
         sec_edgar_contact_email: str = "capstone-project@example.com",
     ):
         self.client = client
-        self.memory = memory or TrendoraMemory()
+        self.memory = memory or ScoutlyMemory()
         self.fetcher = fetcher or get_fetcher("mock")
         self.sec_edgar_contact_email = sec_edgar_contact_email
         self.account_intake_agent = AccountIntakeAgent(client)

@@ -1,7 +1,7 @@
 {
   "account_id": "account_002",
   "account_profile": {
-    "rep_product_name": "Trendora Curated Sourcing",
+    "rep_product_name": "Scoutly Curated Sourcing",
     "product_category": "Trend-Item Sourcing & Curation Service",
     "value_proposition": "We find and secure hard-to-find, high-margin trend inventory so your buying team doesn't have to chase drops themselves",
     "target_customer_name": "Head Buyer",
@@ -20,7 +20,7 @@
       "company_url": "https://www.asos.com",
       "confidence": "medium",
       "summary": "Expanding its Y2K and streetwear assortment to reach a younger shopper",
-      "timestamp": "2026-08-27T02:19:52.392771+00:00"
+      "timestamp": "2026-08-28T19:59:43.001922+00:00"
     }
   ],
   "account_signals": {
@@ -28,5 +28,5 @@
       "last_financial_summary": "No public filings found; appears to be privately held"
     }
   },
-  "last_updated": "2026-08-27T02:19:52.392771+00:00"
+  "last_updated": "2026-08-28T19:59:43.001922+00:00"
 }

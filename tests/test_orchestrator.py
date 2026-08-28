@@ -5,13 +5,13 @@ prospect-objection follow-up path, using the MockClient and MockFetcher.
 """
 
 from llm_client import MockClient
-from memory import TrendoraMemory
-from orchestrator import TrendoraOrchestrator
+from memory import ScoutlyMemory
+from orchestrator import ScoutlyOrchestrator
 from web_research import MockFetcher
 
 
-def _make_orchestrator(memory: TrendoraMemory | None = None) -> TrendoraOrchestrator:
-    return TrendoraOrchestrator(MockClient(), memory or TrendoraMemory(), MockFetcher())
+def _make_orchestrator(memory: ScoutlyMemory | None = None) -> ScoutlyOrchestrator:
+    return ScoutlyOrchestrator(MockClient(), memory or ScoutlyMemory(), MockFetcher())
 
 
 def test_full_pipeline_produces_all_five_outputs():
@@ -87,7 +87,7 @@ def test_objection_followup_routes_to_sales_recommendation_only():
 
 
 def test_pipeline_runs_with_pre_existing_memory():
-    memory = TrendoraMemory(account_id="returning_account")
+    memory = ScoutlyMemory(account_id="returning_account")
     memory.register_prospect_objection("burned by a slow onboarding once before")
     orchestrator = _make_orchestrator(memory)
     result = orchestrator.run_account_brief(

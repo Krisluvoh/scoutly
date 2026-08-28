@@ -1,9 +1,9 @@
 """
 llm_client.py
 --------------
-Pluggable LLM client layer for Trendora.
+Pluggable LLM client layer for Scoutly.
 
-Trendora's agent logic (system prompts, JSON schemas, memory, orchestration)
+Scoutly's agent logic (system prompts, JSON schemas, memory, orchestration)
 is provider-agnostic. This module isolates the one part of the system that
 talks to a specific model API, so the same agent code can run against:
 
@@ -19,7 +19,7 @@ the system is not hard-wired to a single vendor, which matters for cost,
 rate-limit, and outage resilience in a real B2B account-research tool.
 
 Note on architecture: the same idea can be built with full LangChain chains
-(ChatPromptTemplate | model | parser) instead. Trendora's pipeline is a
+(ChatPromptTemplate | model | parser) instead. Scoutly's pipeline is a
 fixed, non-branching five-step sequence (a "chain", not an "agent" in the
 tool-calling sense), so a thin custom provider abstraction was simpler here
 — no dynamic tool selection means no need for a heavier framework. The
@@ -46,7 +46,7 @@ class LLMClient(ABC):
 
 
 class AnthropicClient(LLMClient):
-    """Claude-backed client. Default provider for Trendora."""
+    """Claude-backed client. Default provider for Scoutly."""
 
     def __init__(self, model: str = "claude-sonnet-4-6", api_key: str | None = None):
         import anthropic  # local import so the package is optional until used
@@ -140,7 +140,7 @@ class MockClient(LLMClient):
 
         if role == "account_intake":
             payload = {
-                "rep_product_name": "Trendora Curated Sourcing",
+                "rep_product_name": "Scoutly Curated Sourcing",
                 "product_category": "Trend-Item Sourcing & Curation Service",
                 "value_proposition": (
                     "We find and secure hard-to-find, high-margin trend inventory so your "

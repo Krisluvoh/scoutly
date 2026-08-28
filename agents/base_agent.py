@@ -1,7 +1,7 @@
 """
 agents/base_agent.py
 ---------------------
-Shared machinery for every Trendora agent:
+Shared machinery for every Scoutly agent:
   - injects memory context into the prompt
   - forces strict JSON-only output
   - parses + validates the response against a pydantic schema
@@ -17,7 +17,7 @@ import re
 from pydantic import BaseModel, ValidationError
 
 from llm_client import LLMClient
-from memory import TrendoraMemory
+from memory import ScoutlyMemory
 
 
 class AgentError(RuntimeError):
@@ -40,7 +40,7 @@ class BaseAgent:
     def __init__(self, client: LLMClient):
         self.client = client
 
-    def build_user_message(self, memory: TrendoraMemory, turn_input: dict) -> str:
+    def build_user_message(self, memory: ScoutlyMemory, turn_input: dict) -> str:
         """
         Assembles the one message sent to the model for this turn: the
         customer's memory so far, then whatever new input this specific
@@ -74,7 +74,7 @@ class BaseAgent:
                 text = brace_match.group(0)
         return json.loads(text)
 
-    def run(self, memory: TrendoraMemory, turn_input: dict) -> dict:
+    def run(self, memory: ScoutlyMemory, turn_input: dict) -> dict:
         """
         The main entry point every agent uses: build the prompt, call the
         model, and try to parse + validate its response against

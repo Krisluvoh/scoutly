@@ -1,7 +1,7 @@
 """
 memory.py
 ---------
-Contextual memory shared across Trendora's five agents within a session,
+Contextual memory shared across Scoutly's five agents within a session,
 and persisted to disk so it survives across sessions for a returning
 account. This is what lets the Sales Recommendation Agent say things like
 "this prospect already pushed back on price last time we researched them,
@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 
 
 @dataclass
-class TrendoraMemory:
+class ScoutlyMemory:
     """
     One instance per account (prospective company). Each agent calls one of
     the update_from_* methods below with its own output after it runs (see
@@ -133,7 +133,7 @@ class TrendoraMemory:
             json.dump(asdict(self), f, indent=2)
 
     @classmethod
-    def load(cls, path: str, account_id: str = "guest") -> TrendoraMemory:
+    def load(cls, path: str, account_id: str = "guest") -> ScoutlyMemory:
         """Loads a saved memory file if one exists for this account, otherwise starts a fresh one."""
         if os.path.exists(path):
             with open(path) as f:

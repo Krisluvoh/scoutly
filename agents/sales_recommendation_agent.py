@@ -4,7 +4,7 @@ agents/sales_recommendation_agent.py
 Agent 4 of 5. Runs after Company Research and Competitor research, combining
 their output into an actual sales strategy for the rep (see
 orchestrator.py). Also the only agent that handles a prospect's objection on
-a follow-up turn (TrendoraOrchestrator.handle_prospect_objection), since
+a follow-up turn (ScoutlyOrchestrator.handle_prospect_objection), since
 objection handling is explicitly this agent's job, not a new research pass.
 
 When sourcing_channels.SOURCING_CHANNELS is passed in as reference data,
@@ -20,8 +20,8 @@ BaseAgent.run().
 from agents.base_agent import BaseAgent
 from schemas import SalesRecommendationOutput
 
-SYSTEM_PROMPT = """You are the Sales Recommendation Agent inside Trendora, a multi-agent \
-B2B sales-assistant system. Trendora helps a sales rep research a prospective company \
+SYSTEM_PROMPT = """You are the Sales Recommendation Agent inside Scoutly, a multi-agent \
+B2B sales-assistant system. Scoutly helps a sales rep research a prospective company \
 before outreach and produce a one-page account intelligence brief.
 
 Your ONLY responsibility is recommendation: combining Account Intake, Company Research, \

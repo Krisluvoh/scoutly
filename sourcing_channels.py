@@ -9,7 +9,7 @@ recommendation is grounded in real platform names and real margin/quality
 tradeoffs instead of the model inventing them.
 
 This is what ties the CAP 931-compliant account-research structure back to
-the original Trendora's focus: trend/hard-to-find items and the resale
+the project's original focus: trend/hard-to-find items and the resale
 margin they can command.
 """
 

@@ -1,16 +1,16 @@
 """
 main.py
 -------
-Demo entry point. Runs representative Trendora account-research scenarios
+Demo entry point. Runs representative Scoutly account-research scenarios
 end to end (Account Intake -> Company Research -> Competitor -> Sales
 Recommendation -> Report, plus one prospect-objection follow-up), printing
 each agent's structured JSON output and saving a full transcript.
 
 Usage (with uv):
     uv run main.py                                   # MockClient + MockFetcher, no API key/network needed
-    TRENDORA_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-... TRENDORA_FETCH_MODE=http uv run main.py
-    TRENDORA_PROVIDER=openai OPENAI_API_KEY=sk-... TRENDORA_FETCH_MODE=http uv run main.py
-    TRENDORA_PROVIDER=groq GROQ_API_KEY=gsk-... TRENDORA_FETCH_MODE=http uv run main.py
+    SCOUTLY_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-... SCOUTLY_FETCH_MODE=http uv run main.py
+    SCOUTLY_PROVIDER=openai OPENAI_API_KEY=sk-... SCOUTLY_FETCH_MODE=http uv run main.py
+    SCOUTLY_PROVIDER=groq GROQ_API_KEY=gsk-... SCOUTLY_FETCH_MODE=http uv run main.py
 """
 
 from __future__ import annotations
@@ -21,8 +21,8 @@ import os
 from dotenv import load_dotenv
 
 from llm_client import get_client
-from memory import TrendoraMemory
-from orchestrator import TrendoraOrchestrator
+from memory import ScoutlyMemory
+from orchestrator import ScoutlyOrchestrator
 from web_research import get_fetcher
 
 load_dotenv()
@@ -30,7 +30,7 @@ load_dotenv()
 SCENARIOS = [
     {
         "account_id": "account_001",
-        "rep_product_name": "Trendora Curated Sourcing",
+        "rep_product_name": "Scoutly Curated Sourcing",
         "product_category": "Trend-Item Sourcing & Curation Service",
         "value_proposition": (
             "We find and secure hard-to-find, high-margin trend inventory so your buying "
@@ -43,7 +43,7 @@ SCENARIOS = [
     },
     {
         "account_id": "account_002",
-        "rep_product_name": "Trendora Curated Sourcing",
+        "rep_product_name": "Scoutly Curated Sourcing",
         "product_category": "Trend-Item Sourcing & Curation Service",
         "value_proposition": (
             "We monitor scarcity and drop timing across wholesale, liquidation, and boutique "
@@ -56,7 +56,7 @@ SCENARIOS = [
     },
     {
         "account_id": "account_003",
-        "rep_product_name": "Trendora Curated Sourcing",
+        "rep_product_name": "Scoutly Curated Sourcing",
         "product_category": "Trend-Item Sourcing & Curation Service",
         "value_proposition": (
             "We turn liquidation and overstock inventory into curated, sellable drops "
@@ -83,8 +83,8 @@ def run_all(provider: str = "mock", fetch_mode: str = "mock") -> None:
         print("=" * 80)
 
         memory_path = f"output/memory_{scenario['account_id']}.json"
-        memory = TrendoraMemory.load(memory_path, account_id=scenario["account_id"])
-        orchestrator = TrendoraOrchestrator(client, memory, fetcher)
+        memory = ScoutlyMemory.load(memory_path, account_id=scenario["account_id"])
+        orchestrator = ScoutlyOrchestrator(client, memory, fetcher)
 
         result = orchestrator.run_account_brief(
             rep_product_name=scenario["rep_product_name"],
@@ -119,6 +119,6 @@ def run_all(provider: str = "mock", fetch_mode: str = "mock") -> None:
 
 if __name__ == "__main__":
     run_all(
-        provider=os.environ.get("TRENDORA_PROVIDER", "mock"),
-        fetch_mode=os.environ.get("TRENDORA_FETCH_MODE", "mock"),
+        provider=os.environ.get("SCOUTLY_PROVIDER", "mock"),
+        fetch_mode=os.environ.get("SCOUTLY_FETCH_MODE", "mock"),
     )

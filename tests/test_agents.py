@@ -14,7 +14,7 @@ from agents.competitor_agent import CompetitorAgent
 from agents.report_agent import ReportAgent
 from agents.sales_recommendation_agent import SalesRecommendationAgent
 from llm_client import MockClient
-from memory import TrendoraMemory
+from memory import ScoutlyMemory
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def client():
 
 @pytest.fixture
 def memory():
-    return TrendoraMemory()
+    return ScoutlyMemory()
 
 
 def test_account_intake_agent_returns_validated_schema(client, memory):

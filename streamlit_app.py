@@ -1,20 +1,20 @@
 """
 streamlit_app.py
 -----------------
-Streamlit front end for Trendora, built for deployment on Streamlit
+Streamlit front end for Scoutly, built for deployment on Streamlit
 Community Cloud (free, and — unlike Hugging Face Spaces' free tier —
 supports running real server-side Python with proper secrets management).
 
-Wraps TrendoraOrchestrator in a small form-driven UI: a sales rep enters
+Wraps ScoutlyOrchestrator in a small form-driven UI: a sales rep enters
 their product, value proposition, target contact, and the prospect's
 company/competitor URLs, and gets back a one-page account intelligence
 brief. Streamlit reruns this whole script on every interaction, so the
 orchestrator + memory for the current browser session live in
 st.session_state rather than as local variables.
 
-LLM provider defaults to Groq (free tier) via TRENDORA_PROVIDER /
+LLM provider defaults to Groq (free tier) via SCOUTLY_PROVIDER /
 GROQ_API_KEY. Page fetching defaults to real HTTP fetches via
-TRENDORA_FETCH_MODE (set to "mock" for a fast, offline walkthrough). On
+SCOUTLY_FETCH_MODE (set to "mock" for a fast, offline walkthrough). On
 Streamlit Cloud, set secrets in the app's Settings -> Secrets; they're read
 from st.secrets there. Locally, it falls back to a .env file. Falls back to
 the mock LLM client if no key is configured, so the app still loads and is
@@ -34,14 +34,14 @@ from dotenv import load_dotenv
 from fpdf import FPDF
 
 from llm_client import get_client
-from memory import TrendoraMemory
-from orchestrator import TrendoraOrchestrator
+from memory import ScoutlyMemory
+from orchestrator import ScoutlyOrchestrator
 from web_research import get_fetcher
 
 load_dotenv()
 
-PROVIDER = os.environ.get("TRENDORA_PROVIDER", "groq")
-FETCH_MODE = os.environ.get("TRENDORA_FETCH_MODE", "http")
+PROVIDER = os.environ.get("SCOUTLY_PROVIDER", "groq")
+FETCH_MODE = os.environ.get("SCOUTLY_FETCH_MODE", "http")
 SEC_EDGAR_CONTACT_EMAIL = os.environ.get("SEC_EDGAR_CONTACT_EMAIL", "capstone-project@example.com")
 
 try:
@@ -53,20 +53,24 @@ except Exception:  # noqa: BLE001 - no secrets.toml locally is expected, not an 
 
 THEME_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --tr-gold: #C6A15B;
-    --tr-gold-soft: rgba(198, 161, 91, 0.35);
-    --tr-ink: #ECE7DA;
-    --tr-muted: #9B9587;
-    --tr-panel: #17171A;
-    --tr-bg: #0E0E10;
+    --sc-accent: #4F46E5;
+    --sc-accent-hover: #4338CA;
+    --sc-accent-soft: rgba(79, 70, 229, 0.10);
+    --sc-ink: #0F172A;
+    --sc-muted: #64748B;
+    --sc-panel: #FFFFFF;
+    --sc-bg: #F8FAFC;
+    --sc-border: #E2E8F0;
 }
 
-html, body, [class*="css"] { font-family: 'Jost', sans-serif; }
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 #MainMenu, footer, header { visibility: hidden; }
+
+.stApp { background: var(--sc-bg); }
 
 .block-container {
     max-width: 760px;
@@ -74,274 +78,220 @@ html, body, [class*="css"] { font-family: 'Jost', sans-serif; }
     padding-bottom: 4rem;
 }
 
-.tr-hero { text-align: center; margin-bottom: 2.5rem; }
-.tr-hero .tr-mark {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 3rem;
-    font-weight: 500;
-    letter-spacing: 0.35em;
-    color: var(--tr-ink);
+.sc-hero { text-align: center; margin-bottom: 2.5rem; }
+.sc-hero .sc-mark {
+    font-family: 'Inter', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--sc-ink);
     margin: 0;
-    text-transform: uppercase;
 }
-.tr-hero .tr-rule {
-    width: 64px;
-    height: 1px;
-    background: var(--tr-gold);
-    margin: 0.9rem auto;
-    border: none;
+.sc-hero .sc-tagline {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--sc-muted);
+    margin: 0.5rem 0 0 0;
 }
-.tr-hero .tr-tagline {
-    font-family: 'Jost', sans-serif;
+.sc-hero .sc-provider {
     font-size: 0.78rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--tr-muted);
-    margin: 0;
-}
-.tr-hero .tr-provider {
-    font-size: 0.7rem;
-    color: var(--tr-muted);
+    color: var(--sc-muted);
     margin-top: 0.6rem;
-    letter-spacing: 0.08em;
 }
-.tr-hero .tr-provider b { color: var(--tr-gold); font-weight: 500; }
+.sc-hero .sc-provider b { color: var(--sc-accent); font-weight: 600; }
 
 div[data-testid="stForm"] {
-    background: var(--tr-panel);
-    border: 1px solid var(--tr-gold-soft);
-    border-radius: 2px;
+    background: var(--sc-panel);
+    border: 1px solid var(--sc-border);
+    border-radius: 10px;
     padding: 2rem 2rem 1.4rem 2rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 label[data-testid="stWidgetLabel"] p {
-    font-family: 'Jost', sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--tr-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sc-ink);
 }
 
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea {
-    background: var(--tr-bg);
-    border: 1px solid rgba(198, 161, 91, 0.25);
-    border-radius: 2px;
-    color: var(--tr-ink);
+    background: var(--sc-bg);
+    border: 1px solid var(--sc-border);
+    border-radius: 8px;
+    color: var(--sc-ink);
 }
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus {
-    border-color: var(--tr-gold);
-    box-shadow: none;
+    border-color: var(--sc-accent);
+    box-shadow: 0 0 0 3px var(--sc-accent-soft);
 }
 
 div[data-testid="stFormSubmitButton"] button,
 div[data-testid="stBaseButton-primary"] button {
     width: 100%;
-    background: transparent;
-    color: var(--tr-gold);
-    border: 1px solid var(--tr-gold);
-    border-radius: 2px;
-    font-family: 'Jost', sans-serif;
-    font-size: 0.76rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    background: var(--sc-accent);
+    color: #FFFFFF;
+    border: 1px solid var(--sc-accent);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
     padding: 0.6rem 0;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 div[data-testid="stFormSubmitButton"] button:hover {
-    background: var(--tr-gold);
-    color: var(--tr-bg);
+    background: var(--sc-accent-hover);
+    border-color: var(--sc-accent-hover);
 }
 
 div[data-testid="stDownloadButton"] button {
     width: 100%;
-    background: transparent;
-    color: var(--tr-gold);
-    border: 1px solid var(--tr-gold-soft);
-    border-radius: 2px;
-    font-family: 'Jost', sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    padding: 0.5rem 0;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    background: #FFFFFF;
+    color: var(--sc-accent);
+    border: 1px solid var(--sc-accent);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.55rem 0;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 div[data-testid="stDownloadButton"] button:hover {
-    background: var(--tr-gold);
-    color: var(--tr-bg);
-    border-color: var(--tr-gold);
+    background: var(--sc-accent-soft);
 }
 
-.tr-panel {
-    border: 1px solid rgba(198, 161, 91, 0.2);
-    border-top: 2px solid var(--tr-gold);
-    background: var(--tr-panel);
+.sc-panel {
+    border: 1px solid var(--sc-border);
+    border-top: 3px solid var(--sc-accent);
+    background: var(--sc-panel);
     padding: 1.6rem 1.8rem;
-    margin-top: 1.6rem;
-    border-radius: 2px;
+    margin-top: 1.4rem;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
-.tr-panel .tr-label {
-    font-family: 'Jost', sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.2em;
+.sc-panel .sc-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--tr-gold);
+    color: var(--sc-accent);
     margin-bottom: 0.9rem;
 }
-.tr-panel .tr-row { margin-bottom: 0.55rem; font-size: 0.95rem; line-height: 1.5; }
-.tr-panel .tr-row:last-child { margin-bottom: 0; }
-.tr-panel .tr-row .tr-key {
-    color: var(--tr-muted);
+.sc-panel .sc-row { margin-bottom: 0.55rem; font-size: 0.95rem; line-height: 1.5; color: var(--sc-ink); }
+.sc-panel .sc-row:last-child { margin-bottom: 0; }
+.sc-panel .sc-row .sc-key {
+    color: var(--sc-muted);
     font-size: 0.78rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font-weight: 600;
     margin-right: 0.4rem;
 }
-.tr-panel.tr-recommendation { border-top-color: var(--tr-gold); }
-.tr-panel .tr-verdict {
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    font-size: 1.3rem;
-    color: var(--tr-ink);
+.sc-panel .sc-verdict {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--sc-ink);
     margin-bottom: 0.8rem;
 }
-.tr-panel a { color: var(--tr-gold); }
+.sc-panel a { color: var(--sc-accent); }
 
 div[data-testid="stAlertContainer"] {
-    background: rgba(198, 161, 91, 0.08) !important;
-    border: 1px solid var(--tr-gold-soft) !important;
-    border-radius: 2px !important;
+    background: var(--sc-accent-soft) !important;
+    border: 1px solid rgba(79, 70, 229, 0.25) !important;
+    border-radius: 8px !important;
 }
 div[data-testid="stAlertContainer"] p {
-    color: var(--tr-ink) !important;
-    font-family: 'Jost', sans-serif;
+    color: var(--sc-ink) !important;
+    font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
 }
-div[data-testid="stAlertContainer"] svg { fill: var(--tr-gold) !important; }
+div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
 
-.tr-divider {
+.sc-divider {
     text-align: center;
-    color: var(--tr-gold-soft);
-    letter-spacing: 0.5em;
-    margin: 2.4rem 0 1.6rem 0;
+    color: var(--sc-border);
+    margin: 2.2rem 0 1.4rem 0;
     font-size: 0.8rem;
 }
 
-.tr-loading {
+.sc-loading {
     position: relative;
     text-align: center;
     margin-top: 1.2rem;
     padding: 0.6rem 0;
 }
-.tr-loading .tr-loading-label {
-    font-family: 'Jost', sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--tr-gold);
+.sc-loading .sc-loading-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sc-accent);
     margin-bottom: 0.8rem;
 }
-.tr-loading .tr-loading-label .tr-dots span {
+.sc-loading .sc-loading-label .sc-dots span {
     opacity: 0;
-    animation: tr-dot-fade 1.4s infinite;
+    animation: sc-dot-fade 1.4s infinite;
 }
-.tr-loading .tr-loading-label .tr-dots span:nth-child(1) { animation-delay: 0s; }
-.tr-loading .tr-loading-label .tr-dots span:nth-child(2) { animation-delay: 0.2s; }
-.tr-loading .tr-loading-label .tr-dots span:nth-child(3) { animation-delay: 0.4s; }
-.tr-loading .tr-loading-track {
+.sc-loading .sc-loading-label .sc-dots span:nth-child(1) { animation-delay: 0s; }
+.sc-loading .sc-loading-label .sc-dots span:nth-child(2) { animation-delay: 0.2s; }
+.sc-loading .sc-loading-label .sc-dots span:nth-child(3) { animation-delay: 0.4s; }
+.sc-loading .sc-loading-track {
     position: relative;
     width: 100%;
-    height: 2px;
-    background: rgba(198, 161, 91, 0.15);
-    border-radius: 2px;
+    height: 4px;
+    background: var(--sc-border);
+    border-radius: 4px;
+    overflow: hidden;
 }
-.tr-loading .tr-loading-fill {
+.sc-loading .sc-loading-fill {
     position: absolute;
     top: 0;
     left: -35%;
     height: 100%;
     width: 35%;
-    background: linear-gradient(90deg, transparent, var(--tr-gold) 85%, var(--tr-ink) 100%);
-    animation: tr-sweep 1.9s ease-in-out infinite;
+    background: var(--sc-accent);
+    border-radius: 4px;
+    animation: sc-sweep 1.4s ease-in-out infinite;
 }
-.tr-loading .tr-loading-spark {
-    position: absolute;
-    top: 50%;
-    right: -2px;
-    width: 5px;
-    height: 5px;
-    background: var(--tr-ink);
-    border-radius: 50%;
-    transform: translate(50%, -50%);
-    box-shadow: 0 0 6px 2px var(--tr-gold), 0 0 14px 5px var(--tr-gold-soft);
-}
-.tr-loading .tr-glitter {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-}
-.tr-loading .tr-glitter span {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: var(--tr-gold);
-    border-radius: 50%;
-    opacity: 0;
-    box-shadow: 0 0 5px 1px var(--tr-gold-soft);
-    animation: tr-twinkle 2.3s ease-in-out infinite;
-}
-.tr-loading .tr-glitter span:nth-child(1) { left: 12%; top: 4px;  animation-delay: 0s; }
-.tr-loading .tr-glitter span:nth-child(2) { left: 28%; top: 30px; animation-delay: 0.5s; }
-.tr-loading .tr-glitter span:nth-child(3) { left: 47%; top: 2px;  animation-delay: 1.05s; }
-.tr-loading .tr-glitter span:nth-child(4) { left: 63%; top: 32px; animation-delay: 0.3s; }
-.tr-loading .tr-glitter span:nth-child(5) { left: 80%; top: 6px;  animation-delay: 1.5s; }
-.tr-loading .tr-glitter span:nth-child(6) { left: 91%; top: 28px; animation-delay: 0.85s; }
-@keyframes tr-dot-fade {
+@keyframes sc-dot-fade {
     0%, 80%, 100% { opacity: 0; }
     40% { opacity: 1; }
 }
-@keyframes tr-sweep {
+@keyframes sc-sweep {
     0% { left: -35%; }
     100% { left: 100%; }
-}
-@keyframes tr-twinkle {
-    0%, 100% { opacity: 0; transform: scale(0.3); }
-    50% { opacity: 1; transform: scale(1); }
 }
 </style>
 """
 
 _LOADING_HTML = """
-<div class="tr-loading">
-    <p class="tr-loading-label">{label}<span class="tr-dots">
+<div class="sc-loading">
+    <p class="sc-loading-label">{label}<span class="sc-dots">
         <span>.</span><span>.</span><span>.</span>
     </span></p>
-    <div class="tr-loading-track">
-        <div class="tr-loading-fill"><span class="tr-loading-spark"></span></div>
-    </div>
-    <div class="tr-glitter">
-        <span></span><span></span><span></span><span></span><span></span><span></span>
+    <div class="sc-loading-track">
+        <div class="sc-loading-fill"></div>
     </div>
 </div>
 """
 
 
-def _build_orchestrator() -> tuple[TrendoraOrchestrator, str | None]:
+def _build_orchestrator() -> tuple[ScoutlyOrchestrator, str | None]:
     """Returns (orchestrator, warning). Falls back to a mock LLM if the provider
     errors out; the page-fetch layer is independent and always runs for real
-    unless TRENDORA_FETCH_MODE=mock."""
+    unless SCOUTLY_FETCH_MODE=mock."""
     fetcher = get_fetcher(FETCH_MODE)
     try:
         client = get_client(PROVIDER)
-        orchestrator = TrendoraOrchestrator(
-            client, TrendoraMemory(account_id="web_guest"), fetcher, SEC_EDGAR_CONTACT_EMAIL
+        orchestrator = ScoutlyOrchestrator(
+            client, ScoutlyMemory(account_id="web_guest"), fetcher, SEC_EDGAR_CONTACT_EMAIL
         )
         return orchestrator, None
     except Exception as exc:  # noqa: BLE001 - surfaced to the user, not swallowed
         client = get_client("mock")
-        orchestrator = TrendoraOrchestrator(
-            client, TrendoraMemory(account_id="web_guest"), fetcher, SEC_EDGAR_CONTACT_EMAIL
+        orchestrator = ScoutlyOrchestrator(
+            client, ScoutlyMemory(account_id="web_guest"), fetcher, SEC_EDGAR_CONTACT_EMAIL
         )
         warning = (
             f"Could not start the '{PROVIDER}' provider ({exc}). "
@@ -352,9 +302,9 @@ def _build_orchestrator() -> tuple[TrendoraOrchestrator, str | None]:
 
 def _panel(label: str, rows: list[tuple[str, str]], extra_class: str = "") -> str:
     body = "".join(
-        f'<div class="tr-row"><span class="tr-key">{key}</span>{value}</div>' for key, value in rows if value
+        f'<div class="sc-row"><span class="sc-key">{key}</span>{value}</div>' for key, value in rows if value
     )
-    return f'<div class="tr-panel {extra_class}"><div class="tr-label">{label}</div>{body}</div>'
+    return f'<div class="sc-panel {extra_class}"><div class="sc-label">{label}</div>{body}</div>'
 
 
 def _links_html(urls: list[str]) -> str:
@@ -424,10 +374,10 @@ def _render_result(result: dict) -> None:
         )
 
     st.markdown(
-        f'<div class="tr-panel tr-recommendation"><div class="tr-label">One-Page Account Brief</div>'
-        f'<div class="tr-verdict">"{report.get("recommended_strategy")}"</div>'
+        f'<div class="sc-panel"><div class="sc-label">One-Page Account Brief</div>'
+        f'<div class="sc-verdict">"{report.get("recommended_strategy")}"</div>'
         + "".join(
-            f'<div class="tr-row"><span class="tr-key">{key}</span>{value}</div>'
+            f'<div class="sc-row"><span class="sc-key">{key}</span>{value}</div>'
             for key, value in [
                 ("Company strategy", report.get("company_strategy")),
                 (
@@ -446,11 +396,11 @@ def _render_result(result: dict) -> None:
     )
 
 
-_PDF_GOLD = (198, 161, 91)
-_PDF_INK = (30, 28, 24)
-_PDF_MUTED = (120, 112, 96)
+_PDF_ACCENT = (79, 70, 229)
+_PDF_INK = (15, 23, 42)
+_PDF_MUTED = (100, 116, 139)
 
-# fpdf2's core Times font only encodes latin-1; real LLM output routinely uses
+# fpdf2's core Helvetica font only encodes latin-1; real LLM output routinely uses
 # smart quotes, em/en dashes, and ellipses that latin-1 can't represent, which
 # raises rather than silently dropping. Normalize to ASCII lookalikes first, then
 # replace anything that still doesn't fit instead of crashing the download.
@@ -479,29 +429,29 @@ def _slugify(text: str) -> str:
 
 
 def _pdf_section(pdf: FPDF, title: str, rows: list[tuple[str, str]], verdict: str | None = None) -> None:
-    pdf.set_font("Times", "B", 12)
-    pdf.set_text_color(*_PDF_GOLD)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_text_color(*_PDF_ACCENT)
     pdf.cell(0, 8, _pdf_text(title.upper()), new_x="LMARGIN", new_y="NEXT")
-    pdf.set_draw_color(*_PDF_GOLD)
-    pdf.set_line_width(0.2)
+    pdf.set_draw_color(*_PDF_ACCENT)
+    pdf.set_line_width(0.4)
     y = pdf.get_y()
     pdf.line(pdf.l_margin, y, pdf.w - pdf.r_margin, y)
     pdf.ln(3)
 
     if verdict:
-        pdf.set_font("Times", "BI", 13)
+        pdf.set_font("Helvetica", "BI", 12)
         pdf.set_text_color(*_PDF_INK)
         pdf.multi_cell(0, 7, _pdf_text(f'"{verdict}"'))
         pdf.ln(2)
 
-    pdf.set_font("Times", "", 11)
+    pdf.set_font("Helvetica", "", 10.5)
     for key, value in rows:
         if not value:
             continue
-        pdf.set_font("Times", "B", 9.5)
+        pdf.set_font("Helvetica", "B", 9)
         pdf.set_text_color(*_PDF_MUTED)
         pdf.cell(0, 6, _pdf_text(key.upper()), new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Times", "", 11)
+        pdf.set_font("Helvetica", "", 10.5)
         pdf.set_text_color(*_PDF_INK)
         pdf.multi_cell(0, 6, _pdf_text(value))
         pdf.ln(1)
@@ -517,22 +467,22 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
     pdf.set_margins(20, 20, 20)
     pdf.add_page()
 
-    pdf.set_font("Times", "B", 22)
+    pdf.set_font("Helvetica", "B", 22)
     pdf.set_text_color(*_PDF_INK)
-    pdf.cell(0, 12, "T R E N D O R A", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 12, "Scoutly", new_x="LMARGIN", new_y="NEXT", align="C")
 
-    pdf.set_font("Times", "I", 10)
+    pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(*_PDF_MUTED)
     pdf.cell(0, 6, "Account Intelligence Brief", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(2)
 
-    pdf.set_draw_color(*_PDF_GOLD)
-    pdf.set_line_width(0.4)
+    pdf.set_draw_color(*_PDF_ACCENT)
+    pdf.set_line_width(0.6)
     mid = pdf.w / 2
     pdf.line(mid - 15, pdf.get_y(), mid + 15, pdf.get_y())
     pdf.ln(8)
 
-    pdf.set_font("Times", "", 10)
+    pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(*_PDF_MUTED)
     pdf.cell(0, 6, _pdf_text(f"Target Account: {company_url}"), new_x="LMARGIN", new_y="NEXT")
     pdf.cell(0, 6, f"Prepared {datetime.now().strftime('%B %d, %Y')}", new_x="LMARGIN", new_y="NEXT")
@@ -599,16 +549,15 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
     return bytes(pdf.output())
 
 
-st.set_page_config(page_title="Trendora — Account Intelligence", page_icon="💎", layout="centered")
+st.set_page_config(page_title="Scoutly — Account Intelligence", page_icon="🧭", layout="centered")
 st.markdown(THEME_CSS, unsafe_allow_html=True)
 
 st.markdown(
     f"""
-    <div class="tr-hero">
-        <p class="tr-mark">Trendora</p>
-        <hr class="tr-rule" />
-        <p class="tr-tagline">AI-Powered Account Intelligence for B2B Sales Reps</p>
-        <p class="tr-provider">Advised by <b>{PROVIDER}</b> · Fetching pages via <b>{FETCH_MODE}</b></p>
+    <div class="sc-hero">
+        <p class="sc-mark">Scoutly</p>
+        <p class="sc-tagline">Account intelligence for B2B sales reps</p>
+        <p class="sc-provider">Advised by <b>{PROVIDER}</b> · Fetching pages via <b>{FETCH_MODE}</b></p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -623,7 +572,7 @@ if "orchestrator" not in st.session_state:
 
 with st.form("intake_form"):
     rep_product_name = st.text_input(
-        "What Are You Selling", placeholder="e.g. Trendora Curated Sourcing"
+        "What Are You Selling", placeholder="e.g. Scoutly Curated Sourcing"
     )
     value_proposition = st.text_area(
         "Value Proposition",
@@ -670,7 +619,7 @@ if st.session_state.warning:
 if st.session_state.result:
     _render_result(st.session_state.result)
 
-    st.markdown('<div class="tr-divider">• • •</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sc-divider">• • •</div>', unsafe_allow_html=True)
     with st.form("objection_form"):
         objection_text = st.text_input(
             "Prospect Pushed Back?",
@@ -692,10 +641,10 @@ if st.session_state.result:
     if st.session_state.followup:
         f = st.session_state.followup
         st.markdown(
-            f'<div class="tr-panel tr-recommendation"><div class="tr-label">Revised Approach</div>'
-            f'<div class="tr-verdict">"{f.get("recommended_approach")}"</div>'
+            f'<div class="sc-panel"><div class="sc-label">Revised Approach</div>'
+            f'<div class="sc-verdict">"{f.get("recommended_approach")}"</div>'
             + "".join(
-                f'<div class="tr-row"><span class="tr-key">{key}</span>{value}</div>'
+                f'<div class="sc-row"><span class="sc-key">{key}</span>{value}</div>'
                 for key, value in [
                     ("Addressing the objection", f.get("objection_handling")),
                     ("Next steps", f.get("next_steps")),
@@ -713,6 +662,6 @@ if st.session_state.result:
         st.download_button(
             "Download Account Brief (PDF)",
             data=pdf_bytes,
-            file_name=f"trendora-{company_slug}-brief.pdf",
+            file_name=f"scoutly-{company_slug}-brief.pdf",
             mime="application/pdf",
         )

@@ -14,8 +14,8 @@ Output is validated against schemas.AccountIntakeOutput by BaseAgent.run().
 from agents.base_agent import BaseAgent
 from schemas import AccountIntakeOutput
 
-SYSTEM_PROMPT = """You are the Account Intake Agent inside Trendora, a multi-agent B2B \
-sales-assistant system. Trendora helps a sales rep research a prospective company before \
+SYSTEM_PROMPT = """You are the Account Intake Agent inside Scoutly, a multi-agent B2B \
+sales-assistant system. Scoutly helps a sales rep research a prospective company before \
 outreach and produce a one-page account intelligence brief.
 
 Your ONLY responsibility is intake: structuring what the rep has provided about the \

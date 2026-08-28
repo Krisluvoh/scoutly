@@ -1,94 +1,22 @@
-# Trendora — Multi-Agent B2B Account Intelligence Assistant (CAP 931 Capstone)
+# Scoutly — Multi-Agent B2B Account Intelligence Assistant (CAP 931 Capstone)
 
-Trendora helps a B2B sales rep research a prospective company before
+Scoutly helps a B2B sales rep research a prospective company before
 outreach. Give it what you're selling, your value proposition, the target
-company's URL, and its competitors' URLs, and five AI agents chain together
-to produce a one-page account intelligence brief: company strategy,
-leadership, press/compliance initiatives, competitive positioning, a
-public-filing summary, and a recommended approach — with real, clickable
-source links.
+company's URL, and its competitors' URLs, and five AI agents chain
+together to produce a one-page account intelligence brief: company
+strategy, leadership, press/compliance initiatives, competitive
+positioning, a public-filing summary, a sourcing-strategy recommendation,
+and a recommended approach — with real, clickable source links.
 
 This was built for the Per Scholas CAP 931 capstone assignment ("Build a
 Sales Agent Prototype Using Multi-Agent GPT Models"). It runs on Claude by
 default, with OpenAI and Groq available as drop-in alternatives.
 
-**Try it live:** [trendora-capstone-3rvg64cvfkm8ch2jibth3a.streamlit.app](https://trendora-capstone-3rvg64cvfkm8ch2jibth3a.streamlit.app)
-— a Streamlit web UI in front of the same five-agent pipeline described
-below, running on Groq's free tier.
-
 Setup and dependencies are managed with **[uv](https://docs.astral.sh/uv/)**.
-
-## 0. Project history: what changed to bring this into scope
-
-The first version of Trendora was a different prototype: a consumer sales
-concierge that helped an individual *customer* decide whether to buy a
-limited-release product (sneakers, watches, viral gadgets), with a
-Research Agent that evaluated scarcity, hype cycles, and resale risk.
-
-CAP 931 defines a different scope: a B2B tool that helps a *sales rep*
-research a *prospective company* before outreach — inputs are a target
-company URL and competitor URLs, and the required output is a one-page
-account intelligence brief covering company strategy, leadership, press
-releases/job postings, public 10-K/financial standing, competitive
-positioning, and source links (see `docs/ASSIGNMENT_BRIEF.md` for the full
-brief). The original build didn't cover that scope: it never collected a
-company URL, never fetched or reasoned about a real business, and its
-Research Agent was scoring product hype/scarcity rather than researching a
-company.
-
-This revision brings the project fully into that scope while keeping the
-engineering that was already solid — the multi-agent separation, Pydantic
-validation, provider abstraction, shared memory, and test coverage all
-carry over; what changed is what those pieces are pointed at.
-
-**What changed.** Everything domain-specific: the three agents were
-replaced with five that map directly onto the brief's required inputs and
-outputs (see sections 4 and 5 below); `schemas.py`'s JSON contracts were
-rewritten around company/competitor/brief data instead of
-hype-cycle/scarcity data; `memory.py`'s fields were remapped from
-customer preferences/hype context to account facts/research history; the
-Streamlit form and PDF export were rebuilt around company/competitor URLs
-instead of a product name and message. A genuinely new capability was also
-added rather than just renamed: `web_research.py`, which fetches real
-company/competitor web pages (`requests` + BeautifulSoup) and looks up real
-SEC EDGAR 10-K filings (free, no API key) — this is what makes the
-"Company Strategy," "Leadership," and "Product/Rating Summary from 10-K"
-sections of the brief grounded in actually-retrieved public information
-instead of an LLM guessing about a URL it never saw.
-
-**What stayed the same.** The architectural decisions that were already
-solid were kept essentially unchanged: `agents/base_agent.py`'s
-prompt-building/JSON-extraction/retry/validation logic is untouched; the
-orchestrator-as-sole-coordinator pattern (agents never call each other) is
-untouched; the provider abstraction in `llm_client.py` (Anthropic/OpenAI/
-Groq/Mock behind one interface) is untouched; the mock-first philosophy
-that keeps tests and demos free and offline was extended to the new fetch
-layer (`MockFetcher` alongside `MockClient`) rather than replaced; and the
-test suite still follows the same shape (per-agent isolation, role-leak
-checks, full-pipeline integration) that good multi-agent testing practice
-calls for.
-
-**Requirements coverage.** This revision now meets the full scope of the
-CAP 931 brief:
-
-| Area | Status | Details |
-|---|---|---|
-| Inputs (product, company URL, category, competitors, value prop, target customer) | ✅ | Section 4 |
-| LLM model selection & prompt engineering (5 distinct agent roles) | ✅ | Sections 3, 6 |
-| Memory retention across research runs | ✅ | `memory.py`, section 3 |
-| Data integration (real page fetches + real SEC EDGAR filings) | ✅ | Section 5, `web_research.py` |
-| Outputs (strategy, initiatives/compliance, competitive mentions, leadership, 10-K summary, action links) | ✅ | Section 5 |
-| Optional enhancements (alert system, output-strategy synthesis, sourcing/margin recommendation) | ✅ | Section 7 |
-| Production deployment considerations | ✅ | Section 13 |
-| Documentation (setup, time management, challenges, requirements, system outputs) | ✅ | This README + `examples/sample_run_output/` + `docs/screenshots/` |
-
-The one brief item intentionally not implemented is the optional
-"upload a proprietary internal sheet" input — the brief marks it optional,
-and every other input path already covers the required data.
 
 ## 1. Quick start
 
-There are two ways to run Trendora: the original command-line demo, and a
+There are two ways to run Scoutly: the command-line demo, and a
 browser-based version.
 
 **Command line** (three scripted account-research scenarios, printed to the
@@ -100,8 +28,7 @@ uv run main.py            # runs the 3-scenario demo — no API key or network n
 uv run pytest -q          # runs the test suite — also no API key or network needed
 ```
 
-**Web UI** (a single browser form, built with Streamlit — this is what's
-running at the live link above):
+**Web UI** (a single browser form, built with Streamlit):
 
 ```bash
 uv sync
@@ -110,19 +37,19 @@ uv run streamlit run streamlit_app.py
 
 That opens a local page where you enter your product, value proposition,
 target contact, and the prospect's company + competitor URLs, and get back
-an Account Snapshot → Company Research → Competitive Landscape → one-page
-Account Brief, plus a follow-up box for logging a prospect's objection.
-Without an API key it falls back to mock LLM responses (the page-fetch
-step still runs for real against whatever URLs you enter, since that
-doesn't need a key).
+an Account Snapshot → Company Research → Competitive Landscape →
+Recommended Sourcing Strategy → one-page Account Brief, plus a follow-up
+box for logging a prospect's objection. Without an API key it falls back
+to mock LLM responses (the page-fetch step still runs for real against
+whatever URLs you enter, since that doesn't need a key).
 
 <p align="center">
-  <img src="docs/screenshots/web-ui-form.png" alt="Trendora web UI: account research form" width="480">
+  <img src="docs/screenshots/web-ui-form.png" alt="Scoutly web UI: account research form" width="480">
   <br><em>The intake form</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/web-ui-result.png" alt="Trendora web UI: account research results" width="480">
+  <img src="docs/screenshots/web-ui-result.png" alt="Scoutly web UI: account research results" width="480">
   <br><em>Account Snapshot and Company Research results for one scenario</em>
 </p>
 
@@ -131,7 +58,7 @@ your API key(s), and set which provider to use:
 
 ```bash
 cp .env.example .env
-# edit .env: set TRENDORA_PROVIDER=anthropic, ANTHROPIC_API_KEY=sk-ant-..., TRENDORA_FETCH_MODE=http
+# edit .env: set SCOUTLY_PROVIDER=anthropic, ANTHROPIC_API_KEY=sk-ant-..., SCOUTLY_FETCH_MODE=http
 uv run main.py
 ```
 
@@ -168,9 +95,9 @@ pyproject.toml / uv.lock   uv-managed dependencies
 requirements.txt           dependency list for Streamlit Cloud's build (mirrors uv.lock)
 main.py                    command-line demo entry point / scenario runner
 streamlit_app.py           browser-based web UI, same pipeline as main.py
-.streamlit/config.toml     Streamlit theme (dark, gold accent)
+.streamlit/config.toml     Streamlit theme (light, indigo accent)
 orchestrator.py            wires the five agents together, fetches pages, manages memory
-memory.py                  TrendoraMemory: cross-run contextual memory for one account
+memory.py                  ScoutlyMemory: cross-run contextual memory for one account
 schemas.py                 pydantic schemas — one per agent's required JSON shape
 llm_client.py              pluggable model backend: Anthropic / OpenAI / Groq / Mock
 web_research.py            pluggable page-fetching backend: real HTTP+BeautifulSoup / Mock, plus SEC EDGAR lookup
@@ -190,7 +117,6 @@ tests/
   test_orchestrator.py         full pipeline + objection-handling integration tests
 docs/
   ASSIGNMENT_BRIEF.md            original capstone assignment, transcribed
-  Trendora_Capstone_Report.docx  formal capstone report (predates the domain pivot)
   screenshots/                   web UI screenshots
 examples/
   sample_run_output/             a committed mock run (transcripts + memory) so you can see output without running anything
@@ -199,7 +125,7 @@ examples/
 Each agent sticks to its own lane: it has its own system prompt, only
 returns JSON matching a fixed schema (see `schemas.py`), and that output
 gets checked with pydantic before the orchestrator or the next agent trusts
-it. All five agents read and write to a shared `TrendoraMemory` object, so
+it. All five agents read and write to a shared `ScoutlyMemory` object, so
 by the time the Sales Recommendation Agent runs, it already knows what
 Account Intake, Company Research, and Competitor research found — and if a
 prospect raised an objection on a past research run for the same account,
@@ -216,18 +142,18 @@ fits fine since nothing here needs dynamic tool selection.
 
 ## 4. What it takes as input — mapped to the CAP 931 brief
 
-**Example scenario used throughout this README and `main.py`:** Trendora
+**Example scenario used throughout this README and `main.py`:** Scoutly
 is pitched as a curated trend-item **sourcing service** — "we find and
 secure hard-to-find, high-margin inventory so your buying team doesn't
 have to chase drops themselves" — sold to real boutique/retail companies
 (the target company). This keeps the sales direction ordinary (a rep
 selling a service to a prospect, not the reverse) while staying in the
-trend-item/resale space the project started from — see section 7 for how
-the resale-margin angle comes back as a real feature, not just flavor
-text.
+trend-item/resale space the sourcing-strategy feature is built around —
+see section 7 for how that resale-margin angle becomes a real feature, not
+just flavor text.
 
 The brief asks for: product name, target company URL, product category,
-competitors, value proposition, and target customer. Trendora's intake
+competitors, value proposition, and target customer. Scoutly's intake
 form (`streamlit_app.py`) and `main.py` scenarios collect exactly these:
 
 | CAP 931 input | Where it's collected |
@@ -264,9 +190,7 @@ Research), the Sales Recommendation Agent picks the best-fit sourcing
 channel and named platforms from `sourcing_channels.py` — a small
 reference table of real wholesale/liquidation/dropshipping/boutique/
 category-specific sourcing options — with margin reasoning grounded in
-that table's own notes, never invented. This is the resale-margin
-optimization from the original Trendora, repositioned as the pitch's
-differentiator instead of the product itself.
+that table's own notes, never invented.
 
 Every agent turn also produces a small self-scored evaluation block:
 
@@ -293,7 +217,7 @@ By default this runs on **Claude** (`claude-sonnet-4-6`) through the
 a strict JSON schema — that's the biggest technical risk in this project,
 since one stray sentence outside the JSON breaks the whole pipeline.
 
-You can switch providers with `TRENDORA_PROVIDER`:
+You can switch providers with `SCOUTLY_PROVIDER`:
 - `openai` — GPT-4o-mini by default, via the `openai` SDK.
 - `groq` — GPT-OSS 120B by default, via `langchain-groq`'s `ChatGroq`. A
   good free-tier option for prototyping, though Groq's free lineup changes
@@ -302,7 +226,7 @@ You can switch providers with `TRENDORA_PROVIDER`:
   default, so `uv run main.py` and `uv run pytest` both work out of the box
   with zero setup.
 
-Independently, `TRENDORA_FETCH_MODE` controls the page-fetching backend
+Independently, `SCOUTLY_FETCH_MODE` controls the page-fetching backend
 (`web_research.py`):
 - `http` — real `requests` GETs against the company/competitor URLs
   entered, parsed with BeautifulSoup. Default for the deployed web app.
@@ -311,21 +235,21 @@ Independently, `TRENDORA_FETCH_MODE` controls the page-fetching backend
 
 ## 7. Optional enhancements implemented
 
-| CAP 931 optional enhancement | How Trendora implements it |
+| CAP 931 optional enhancement | How Scoutly implements it |
 |---|---|
 | Alert system for regulatory/product/hiring signals | `sales_recommendation.time_sensitive_signals` — the Sales Recommendation Agent flags anything worth acting on quickly (a leadership change, a hiring surge, a compliance deadline) directly in the brief, rather than a separate notification system a prototype has no way to actually deliver |
 | Improved output strategy | The Report Agent exists specifically to synthesize four agents' output into one coherent one-pager instead of handing the rep four separate JSON blobs |
 | Domain-specific value-add beyond the base brief | `sourcing_recommendation` (see section 5) — a real, table-grounded resale-channel/margin recommendation, not just generic sales advice |
 | Deployment | Streamlit Community Cloud (see section 9) |
 
-## 8. A guardrail I kept from the original build
+## 8. A guardrail built in on purpose
 
 The assignment didn't ask for this, but the Sales Recommendation Agent is
 explicitly instructed not to pressure a prospect who's raised a real
 objection, and to address it plainly rather than talk past it. An agent
 that just pushes "buy now" no matter what the prospect says isn't a very
-trustworthy sales tool, so this felt worth keeping even though it wasn't
-spelled out in the brief.
+trustworthy sales tool, so this felt worth building in even though it
+wasn't spelled out in the brief.
 
 ## 9. Testing
 
@@ -354,18 +278,19 @@ addresses from the server.
 
 ## 11. Timeline
 
-- Original 2-day build: architecture, schemas, memory model, mock client,
-  pipeline wiring, provider integrations, test suite, documentation (as a
-  B2C hype-product concierge — see section 0).
-- Revision to bring the project into the full CAP 931 scope: remapped the
-  same architecture to the B2B account-research brief — new agent roles
-  and schemas, a new real page-fetching layer with a free SEC EDGAR
-  lookup, memory field remapping, new UI inputs/outputs, and a rewritten
-  test suite.
-- Follow-up refinement: added a table-grounded sourcing-channel
-  recommendation (`sourcing_recommendation`) so the resale-margin angle
-  from the original project comes back as the pitch's differentiator (see
-  sections 5 and 7).
+- Architecture, schemas, memory model, mock client, pipeline wiring,
+  provider integrations, and initial test suite for the five-agent
+  account-research pipeline.
+- Added the real page-fetching layer (`web_research.py`, `requests` +
+  BeautifulSoup) and the free SEC EDGAR full-text-search lookup, so
+  research is grounded in actually-retrieved public information instead of
+  an LLM guessing about a URL it never saw.
+- Added the table-grounded sourcing-strategy recommendation
+  (`sourcing_recommendation`, `sourcing_channels.py`) so the resale-margin
+  angle became a real, differentiated feature rather than generic sales
+  advice.
+- Split into its own standalone repository under the name Scoutly, with a
+  full visual redesign to a clean B2B SaaS look.
 
 ## 12. Problems I ran into, and how I fixed them
 
@@ -378,11 +303,30 @@ addresses from the server.
 | A URL-fetching feature on a public form is a potential SSRF vector | Added `_is_safe_url()`: blocks non-http(s) schemes and resolves+rejects private/loopback/link-local hostnames before fetching |
 | Needing to test and demo without burning API credits, requiring a key, or depending on live network access | `MockClient` + `MockFetcher` produce schema-valid fixture data for offline runs and the whole test suite |
 | Wanting pinned, reproducible dependencies instead of a loose `requirements.txt` | Switched to `uv init` / `uv add`, which gives you `pyproject.toml` plus a fully pinned `uv.lock` |
-| Hugging Face Spaces turned out to require a paid plan for anything that runs real Python (Gradio/Docker); the free tier is Static-only, which can't call an API without exposing the key in the browser | Rebuilt the web UI in Streamlit instead and deployed to Streamlit Community Cloud, which is free and has real server-side secrets |
-| The Groq model this project defaulted to (`qwen/qwen3-32b`) got discontinued after deployment, which only showed up as a `groq.NotFoundError` once the app was live | Swapped the default to `llama-3.3-70b-versatile`, then again to `openai/gpt-oss-120b` after that one was also discontinued — Groq's free-tier lineup turns over fast enough that this default may need to change again; check `console.groq.com/docs/models` for the current production list |
+| Hugging Face Spaces turned out to require a paid plan for anything that runs real Python (Gradio/Docker); the free tier is Static-only, which can't call an API without exposing the key in the browser | Built the web UI in Streamlit instead and deployed to Streamlit Community Cloud, which is free and has real server-side secrets |
+| The Groq model this project defaulted to got discontinued after deployment, which only showed up as a `groq.NotFoundError` once the app was live | Swapped to `openai/gpt-oss-120b`, Groq's flagship production chat model — Groq's free-tier lineup turns over fast enough that this default may need to change again; check `console.groq.com/docs/models` for the current production list |
 | `st.secrets` raises an exception instead of just returning nothing when there's no `secrets.toml` file, which crashed the app for anyone running it locally without Streamlit Cloud secrets configured | Wrapped that check in a try/except so a missing secrets file is treated as "no key yet," not a crash |
 
-## 13. If this went to production
+## 13. Requirements coverage
+
+Scoutly meets the full scope of the CAP 931 brief:
+
+| Area | Status | Details |
+|---|---|---|
+| Inputs (product, company URL, category, competitors, value prop, target customer) | ✅ | Section 4 |
+| LLM model selection & prompt engineering (5 distinct agent roles) | ✅ | Sections 3, 6 |
+| Memory retention across research runs | ✅ | `memory.py`, section 3 |
+| Data integration (real page fetches + real SEC EDGAR filings) | ✅ | Section 5, `web_research.py` |
+| Outputs (strategy, initiatives/compliance, competitive mentions, leadership, 10-K summary, action links) | ✅ | Section 5 |
+| Optional enhancements (alert system, output-strategy synthesis, sourcing/margin recommendation) | ✅ | Section 7 |
+| Production deployment considerations | ✅ | Section 14 |
+| Documentation (setup, time management, challenges, requirements, system outputs) | ✅ | This README + `examples/sample_run_output/` + `docs/screenshots/` |
+
+The one brief item intentionally not implemented is the optional
+"upload a proprietary internal sheet" input — the brief marks it optional,
+and every other input path already covers the required data.
+
+## 14. If this went to production
 
 - **Swappable LLM providers**: switching between Anthropic/OpenAI/Groq/mock is one factory call or one environment variable.
 - **Swappable fetch backend**: same pattern for the page-fetching layer (`web_research.get_fetcher`), so a production deployment could swap in a headless-browser fetcher for JS-heavy sites without touching agent code.

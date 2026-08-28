@@ -13,8 +13,8 @@ Output is validated against schemas.CompetitorOutput by BaseAgent.run().
 from agents.base_agent import BaseAgent
 from schemas import CompetitorOutput
 
-SYSTEM_PROMPT = """You are the Competitor Agent inside Trendora, a multi-agent B2B \
-sales-assistant system. Trendora helps a sales rep research a prospective company before \
+SYSTEM_PROMPT = """You are the Competitor Agent inside Scoutly, a multi-agent B2B \
+sales-assistant system. Scoutly helps a sales rep research a prospective company before \
 outreach and produce a one-page account intelligence brief.
 
 Your ONLY responsibility is competitor research: summarizing each competitor from the \

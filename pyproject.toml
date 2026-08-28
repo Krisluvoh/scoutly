@@ -1,7 +1,7 @@
 [project]
-name = "trendora"
-version = "0.2.0"
-description = "Multi-agent B2B account-intelligence prototype (Intake / Company Research / Competitor / Recommendation / Report) — CAP 931 capstone"
+name = "scoutly"
+version = "1.0.0"
+description = "Multi-agent B2B account-intelligence and sourcing-strategy assistant (Intake / Company Research / Competitor / Recommendation / Report) — CAP 931 capstone"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

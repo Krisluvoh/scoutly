@@ -1,5 +1,6 @@
 """
-The three Trendora agents: Intake, Research, and Recommendation.
+The five Scoutly agents: Account Intake, Company Research, Competitor,
+Sales Recommendation, and Report.
 
 Each module in this package defines one agent's system prompt and wires it
 to its output schema. Shared plumbing (prompt building, JSON parsing,
