@@ -53,17 +53,17 @@ except Exception:  # noqa: BLE001 - no secrets.toml locally is expected, not an 
 
 THEME_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --sc-accent: #4F46E5;
-    --sc-accent-hover: #4338CA;
-    --sc-accent-soft: rgba(79, 70, 229, 0.10);
-    --sc-ink: #0F172A;
-    --sc-muted: #64748B;
-    --sc-panel: #FFFFFF;
-    --sc-bg: #F8FAFC;
-    --sc-border: #E2E8F0;
+    --sc-accent: #B8955C;
+    --sc-accent-hover: #A8823C;
+    --sc-accent-soft: rgba(184, 149, 92, 0.12);
+    --sc-ink: #F1EEE7;
+    --sc-muted: #9B9587;
+    --sc-panel: #17171A;
+    --sc-bg: #0B0B0C;
+    --sc-border: rgba(184, 149, 92, 0.22);
 }
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
@@ -80,18 +80,20 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 .sc-hero { text-align: center; margin-bottom: 2.5rem; }
 .sc-hero .sc-mark {
-    font-family: 'Inter', sans-serif;
-    font-size: 2.4rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-family: 'Playfair Display', serif;
+    font-size: 2.6rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
     color: var(--sc-ink);
     margin: 0;
 }
 .sc-hero .sc-tagline {
     font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--sc-muted);
-    margin: 0.5rem 0 0 0;
+    margin: 0.6rem 0 0 0;
 }
 .sc-hero .sc-provider {
     font-size: 0.78rem;
@@ -103,23 +105,25 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 div[data-testid="stForm"] {
     background: var(--sc-panel);
     border: 1px solid var(--sc-border);
-    border-radius: 10px;
+    border-radius: 6px;
     padding: 2rem 2rem 1.4rem 2rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 label[data-testid="stWidgetLabel"] p {
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.76rem;
     font-weight: 600;
-    color: var(--sc-ink);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--sc-muted);
 }
 
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea {
     background: var(--sc-bg);
     border: 1px solid var(--sc-border);
-    border-radius: 8px;
+    border-radius: 4px;
     color: var(--sc-ink);
 }
 div[data-testid="stTextInput"] input:focus,
@@ -132,12 +136,13 @@ div[data-testid="stFormSubmitButton"] button,
 div[data-testid="stBaseButton-primary"] button {
     width: 100%;
     background: var(--sc-accent);
-    color: #FFFFFF;
+    color: #16140F;
     border: 1px solid var(--sc-accent);
-    border-radius: 8px;
+    border-radius: 4px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 600;
+    letter-spacing: 0.04em;
     padding: 0.6rem 0;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
@@ -148,13 +153,14 @@ div[data-testid="stFormSubmitButton"] button:hover {
 
 div[data-testid="stDownloadButton"] button {
     width: 100%;
-    background: #FFFFFF;
+    background: transparent;
     color: var(--sc-accent);
     border: 1px solid var(--sc-accent);
-    border-radius: 8px;
+    border-radius: 4px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
+    letter-spacing: 0.04em;
     padding: 0.55rem 0;
     transition: background 0.15s ease, color 0.15s ease;
 }
@@ -164,18 +170,18 @@ div[data-testid="stDownloadButton"] button:hover {
 
 .sc-panel {
     border: 1px solid var(--sc-border);
-    border-top: 3px solid var(--sc-accent);
+    border-top: 2px solid var(--sc-accent);
     background: var(--sc-panel);
     padding: 1.6rem 1.8rem;
     margin-top: 1.4rem;
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 .sc-panel .sc-label {
     font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--sc-accent);
     margin-bottom: 0.9rem;
@@ -184,14 +190,17 @@ div[data-testid="stDownloadButton"] button:hover {
 .sc-panel .sc-row:last-child { margin-bottom: 0; }
 .sc-panel .sc-row .sc-key {
     color: var(--sc-muted);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     font-weight: 600;
     margin-right: 0.4rem;
 }
 .sc-panel .sc-verdict {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
     font-weight: 600;
-    font-size: 1.15rem;
+    font-size: 1.35rem;
     color: var(--sc-ink);
     margin-bottom: 0.8rem;
 }
@@ -199,8 +208,8 @@ div[data-testid="stDownloadButton"] button:hover {
 
 div[data-testid="stAlertContainer"] {
     background: var(--sc-accent-soft) !important;
-    border: 1px solid rgba(79, 70, 229, 0.25) !important;
-    border-radius: 8px !important;
+    border: 1px solid var(--sc-border) !important;
+    border-radius: 4px !important;
 }
 div[data-testid="stAlertContainer"] p {
     color: var(--sc-ink) !important;
@@ -212,6 +221,7 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
 .sc-divider {
     text-align: center;
     color: var(--sc-border);
+    letter-spacing: 0.4em;
     margin: 2.2rem 0 1.4rem 0;
     font-size: 0.8rem;
 }
@@ -224,8 +234,10 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
 }
 .sc-loading .sc-loading-label {
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.76rem;
     font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: var(--sc-accent);
     margin-bottom: 0.8rem;
 }
@@ -239,9 +251,9 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
 .sc-loading .sc-loading-track {
     position: relative;
     width: 100%;
-    height: 4px;
+    height: 2px;
     background: var(--sc-border);
-    border-radius: 4px;
+    border-radius: 2px;
     overflow: hidden;
 }
 .sc-loading .sc-loading-fill {
@@ -251,8 +263,8 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
     height: 100%;
     width: 35%;
     background: var(--sc-accent);
-    border-radius: 4px;
-    animation: sc-sweep 1.4s ease-in-out infinite;
+    border-radius: 2px;
+    animation: sc-sweep 1.6s ease-in-out infinite;
 }
 @keyframes sc-dot-fade {
     0%, 80%, 100% { opacity: 0; }
@@ -396,11 +408,11 @@ def _render_result(result: dict) -> None:
     )
 
 
-_PDF_ACCENT = (79, 70, 229)
-_PDF_INK = (15, 23, 42)
-_PDF_MUTED = (100, 116, 139)
+_PDF_ACCENT = (168, 130, 60)
+_PDF_INK = (30, 28, 24)
+_PDF_MUTED = (120, 112, 96)
 
-# fpdf2's core Helvetica font only encodes latin-1; real LLM output routinely uses
+# fpdf2's core Times font only encodes latin-1; real LLM output routinely uses
 # smart quotes, em/en dashes, and ellipses that latin-1 can't represent, which
 # raises rather than silently dropping. Normalize to ASCII lookalikes first, then
 # replace anything that still doesn't fit instead of crashing the download.
@@ -429,7 +441,7 @@ def _slugify(text: str) -> str:
 
 
 def _pdf_section(pdf: FPDF, title: str, rows: list[tuple[str, str]], verdict: str | None = None) -> None:
-    pdf.set_font("Helvetica", "B", 12)
+    pdf.set_font("Times", "B", 12)
     pdf.set_text_color(*_PDF_ACCENT)
     pdf.cell(0, 8, _pdf_text(title.upper()), new_x="LMARGIN", new_y="NEXT")
     pdf.set_draw_color(*_PDF_ACCENT)
@@ -439,19 +451,19 @@ def _pdf_section(pdf: FPDF, title: str, rows: list[tuple[str, str]], verdict: st
     pdf.ln(3)
 
     if verdict:
-        pdf.set_font("Helvetica", "BI", 12)
+        pdf.set_font("Times", "BI", 12)
         pdf.set_text_color(*_PDF_INK)
         pdf.multi_cell(0, 7, _pdf_text(f'"{verdict}"'))
         pdf.ln(2)
 
-    pdf.set_font("Helvetica", "", 10.5)
+    pdf.set_font("Times", "", 10.5)
     for key, value in rows:
         if not value:
             continue
-        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_font("Times", "B", 9)
         pdf.set_text_color(*_PDF_MUTED)
         pdf.cell(0, 6, _pdf_text(key.upper()), new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "", 10.5)
+        pdf.set_font("Times", "", 10.5)
         pdf.set_text_color(*_PDF_INK)
         pdf.multi_cell(0, 6, _pdf_text(value))
         pdf.ln(1)
@@ -467,11 +479,11 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
     pdf.set_margins(20, 20, 20)
     pdf.add_page()
 
-    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_font("Times", "B", 22)
     pdf.set_text_color(*_PDF_INK)
-    pdf.cell(0, 12, "Scoutly", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.cell(0, 12, "S C O U T L Y", new_x="LMARGIN", new_y="NEXT", align="C")
 
-    pdf.set_font("Helvetica", "", 10)
+    pdf.set_font("Times", "I", 10)
     pdf.set_text_color(*_PDF_MUTED)
     pdf.cell(0, 6, "Account Intelligence Brief", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(2)
@@ -482,7 +494,7 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
     pdf.line(mid - 15, pdf.get_y(), mid + 15, pdf.get_y())
     pdf.ln(8)
 
-    pdf.set_font("Helvetica", "", 10)
+    pdf.set_font("Times", "", 10)
     pdf.set_text_color(*_PDF_MUTED)
     pdf.cell(0, 6, _pdf_text(f"Target Account: {company_url}"), new_x="LMARGIN", new_y="NEXT")
     pdf.cell(0, 6, f"Prepared {datetime.now().strftime('%B %d, %Y')}", new_x="LMARGIN", new_y="NEXT")

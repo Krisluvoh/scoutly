@@ -95,7 +95,7 @@ pyproject.toml / uv.lock   uv-managed dependencies
 requirements.txt           dependency list for Streamlit Cloud's build (mirrors uv.lock)
 main.py                    command-line demo entry point / scenario runner
 streamlit_app.py           browser-based web UI, same pipeline as main.py
-.streamlit/config.toml     Streamlit theme (light, indigo accent)
+.streamlit/config.toml     Streamlit theme (dark, brass accent — refined, not boutique-luxury)
 orchestrator.py            wires the five agents together, fetches pages, manages memory
 memory.py                  ScoutlyMemory: cross-run contextual memory for one account
 schemas.py                 pydantic schemas — one per agent's required JSON shape
@@ -291,6 +291,11 @@ addresses from the server.
   advice.
 - Split into its own standalone repository under the name Scoutly, with a
   full visual redesign to a clean B2B SaaS look.
+- Refined the visual identity further into a quieter, high-end look —
+  deep charcoal palette, serif display type, muted brass accent — to
+  better match the boutique/luxury retail clientele Scoutly's example
+  scenarios target, without reverting to the earlier boutique-concierge
+  styling's sparkle effects.
 
 ## 12. Problems I ran into, and how I fixed them
 
