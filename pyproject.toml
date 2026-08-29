@@ -1,6 +1,6 @@
 [project]
 name = "scoutly"
-version = "1.0.0"
+version = "1.1.0"
 description = "Multi-agent B2B account-intelligence and sourcing-strategy assistant (Intake / Company Research / Competitor / Recommendation / Report) — CAP 931 capstone"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -11,6 +11,8 @@ dependencies = [
     "langchain-groq>=1.1.3",
     "openai>=3.0.0",
     "pydantic>=2.13.4",
+    "pypdf>=5.0.0",
+    "python-docx>=1.1.0",
     "python-dotenv>=1.2.2",
     "requests>=2.32.0",
     "streamlit>=1.61.1",

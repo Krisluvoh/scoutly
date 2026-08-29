@@ -34,6 +34,7 @@ class AccountIntakeOutput(BaseModel):
     competitor_urls: list[str] = Field(default_factory=list)
     missing_info: list[str] = Field(default_factory=list)
     research_priorities: list[str] = Field(default_factory=list)
+    product_document_summary: str = ""
     evaluation: Evaluation | None = None
 
 
@@ -53,6 +54,7 @@ class CompanyResearchOutput(BaseModel):
     compliance_mentions: list[str] = Field(default_factory=list)
     leadership: list[LeadershipContact] = Field(default_factory=list)
     financial_summary: str = ""
+    filing_highlights: list[str] = Field(default_factory=list)
     confidence: str = ""
     sources: list[str] = Field(default_factory=list)
     evaluation: Evaluation | None = None
@@ -111,6 +113,7 @@ class AccountBriefOutput(BaseModel):
     competitive_mentions: list[str] = Field(default_factory=list)
     leadership_information: list[LeadershipContact] = Field(default_factory=list)
     financial_summary: str = ""
+    filing_highlights: list[str] = Field(default_factory=list)
     recommended_strategy: str = ""
     sourcing_recommendation: SourcingRecommendation | None = None
     action_links: list[str] = Field(default_factory=list)

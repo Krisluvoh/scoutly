@@ -3,6 +3,9 @@ agents/competitor_agent.py
 ----------------------------
 Agent 3 of 5. Runs after Company Research, using fetched competitor page
 content plus the company research summary as context (see orchestrator.py).
+Each competitor gets the same homepage-plus-discovered-subpages treatment
+(leadership/press/about/etc, see ScoutlyOrchestrator._fetch_pages_with_
+subpages) as the target company, not just a single homepage fetch.
 
 Same "extract from real fetched text, don't invent" discipline as the
 Company Research Agent, applied to each competitor URL the rep supplied.
@@ -23,9 +26,12 @@ compares to them. You never research the target company itself and you never mak
 final sales recommendation — those are other agents' jobs.
 
 Responsibilities:
-- For each competitor you were given fetched page content for, produce a short summary \
-and any notable_mentions (technology choices, publicly stated challenges, market \
-positioning) found in that text — using ONLY what's actually present in the fetched text.
+- FETCHED PAGE CONTENT maps each competitor URL to a LIST of fetched pages (their \
+homepage plus any discovered leadership/press/about/careers subpages) — read across all \
+of a competitor's pages, not just the first one.
+- For each competitor, produce a short summary and any notable_mentions (technology \
+choices, publicly stated challenges, market positioning, leadership) found across their \
+fetched pages — using ONLY what's actually present in that text.
 - Synthesize a brief competitive_landscape: how the target company's research summary \
 (given to you in NEW INPUT) appears to compare to these competitors.
 - Suggest a differentiation_angle: a specific, defensible way the rep's product/value \

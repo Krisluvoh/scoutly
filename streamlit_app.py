@@ -33,6 +33,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from fpdf import FPDF
 
+from document_intake import extract_text
 from llm_client import get_client
 from memory import ScoutlyMemory
 from orchestrator import ScoutlyOrchestrator
@@ -338,6 +339,7 @@ def _render_result(result: dict) -> None:
                 ("Category", intake.get("product_category")),
                 ("Target contact", intake.get("target_customer_name")),
                 ("Research priorities", ", ".join(intake.get("research_priorities") or []) or "—"),
+                ("Uploaded document summary", intake.get("product_document_summary")),
             ],
         ),
         unsafe_allow_html=True,
@@ -354,6 +356,7 @@ def _render_result(result: dict) -> None:
                 ("Key initiatives", ", ".join(research.get("key_initiatives") or []) or "—"),
                 ("Leadership", leadership or "—"),
                 ("Financials", research.get("financial_summary")),
+                ("10-K highlights", ", ".join(research.get("filing_highlights") or []) or None),
                 ("Confidence", research.get("confidence")),
             ],
         ),
@@ -398,6 +401,7 @@ def _render_result(result: dict) -> None:
                 ),
                 ("Competitive mentions", ", ".join(report.get("competitive_mentions") or []) or None),
                 ("Financials", report.get("financial_summary")),
+                ("10-K highlights", ", ".join(report.get("filing_highlights") or []) or None),
                 ("Next steps", rec.get("next_steps")),
                 ("Action links", _links_html(report.get("action_links") or [])),
             ]
@@ -524,6 +528,12 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
         "Competitive Mentions",
         [("Notable mentions", ", ".join(report.get("competitive_mentions") or []) or None)],
     )
+    if report.get("filing_highlights"):
+        _pdf_section(
+            pdf,
+            "10-K Highlights",
+            [("From the most recent public filing", ", ".join(report["filing_highlights"]))],
+        )
     sourcing = report.get("sourcing_recommendation") or rec.get("sourcing_recommendation")
     if sourcing:
         _pdf_section(
@@ -599,6 +609,11 @@ with st.form("intake_form"):
         "Competitor URLs (one per line)",
         placeholder="https://www.retail-competitor-a.com\nhttps://www.retail-competitor-b.com",
     )
+    product_document = st.file_uploader(
+        "Product Overview (optional)",
+        type=["pdf", "docx", "txt"],
+        help="Upload a one-pager instead of typing a value proposition — the agent will summarize it.",
+    )
     submitted = st.form_submit_button("Research This Account")
 
 if submitted:
@@ -606,6 +621,9 @@ if submitted:
     if not rep_product_name.strip() or not value_proposition.strip() or not company_url.strip():
         st.warning("Enter at least what you're selling, your value proposition, and the target company URL.")
     else:
+        product_document_text = (
+            extract_text(product_document.name, product_document.getvalue()) if product_document else ""
+        )
         loading = st.empty()
         loading.markdown(_LOADING_HTML.format(label="Researching Account"), unsafe_allow_html=True)
         time.sleep(0.35)  # guarantee the widget paints before a fast response clears it
@@ -617,6 +635,7 @@ if submitted:
             company_url=company_url,
             competitor_urls=competitor_urls,
             product_category=product_category,
+            product_document_text=product_document_text,
         )
         loading.empty()
         st.session_state.orchestrator = orchestrator

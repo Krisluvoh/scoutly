@@ -6,12 +6,26 @@ prospect-objection follow-up path, using the MockClient and MockFetcher.
 
 from llm_client import MockClient
 from memory import ScoutlyMemory
-from orchestrator import ScoutlyOrchestrator
+from orchestrator import ScoutlyOrchestrator, _guess_company_name_candidates
 from web_research import MockFetcher
 
 
 def _make_orchestrator(memory: ScoutlyMemory | None = None) -> ScoutlyOrchestrator:
     return ScoutlyOrchestrator(MockClient(), memory or ScoutlyMemory(), MockFetcher())
+
+
+def test_guess_company_name_candidates_tries_both_sides_of_separator():
+    # Real-world example: paloaltonetworks.com's <title> puts the tagline
+    # first and the actual company name after the dash — a naive "take the
+    # first half" heuristic would only ever guess the tagline.
+    candidates = _guess_company_name_candidates(
+        "Leader in Cybersecurity Protection & Software for the Modern Enterprises - Palo Alto Networks"
+    )
+    assert "Palo Alto Networks" in candidates
+
+
+def test_guess_company_name_candidates_returns_empty_list_for_blank_title():
+    assert _guess_company_name_candidates("") == []
 
 
 def test_full_pipeline_produces_all_five_outputs():
@@ -84,6 +98,39 @@ def test_objection_followup_routes_to_sales_recommendation_only():
     assert "recommended_approach" in followup
     assert "already has a vendor" in orchestrator.memory.past_prospect_objections
     assert orchestrator.transcript[-1]["agent"] == "sales_recommendation_followup"
+
+
+def test_check_for_updates_reports_facts_not_seen_before():
+    # MockClient/MockFetcher are deterministic, so pre-seed known_account_facts
+    # with something different from what the mock always returns — anything
+    # the mock returns that wasn't in this seeded list is genuinely "new" from
+    # check_for_updates' point of view, without needing the mocks to vary.
+    memory = ScoutlyMemory(account_id="account_to_recheck")
+    memory.known_account_facts = ["A fact from a previous, different research run"]
+    orchestrator = _make_orchestrator(memory)
+
+    report = orchestrator.check_for_updates(
+        company_url="https://example-prospect.com",
+        competitor_urls=["https://example-competitor.com"],
+    )
+
+    assert report["company_url"] == "https://example-prospect.com"
+    assert report["checked_at"]
+    assert report["new_facts"]
+    assert "A fact from a previous, different research run" not in report["new_facts"]
+
+
+def test_check_for_updates_only_reruns_company_and_competitor_agents():
+    orchestrator = _make_orchestrator()
+    orchestrator.check_for_updates(
+        company_url="https://example-prospect.com",
+        competitor_urls=[],
+    )
+    agents_logged = [entry["agent"] for entry in orchestrator.transcript]
+    assert "account_intake" not in agents_logged
+    assert "sales_recommendation" not in agents_logged
+    assert "company_research" in agents_logged
+    assert "competitor" in agents_logged
 
 
 def test_pipeline_runs_with_pre_existing_memory():

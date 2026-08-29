@@ -37,7 +37,15 @@ from abc import ABC, abstractmethod
 
 
 class LLMClient(ABC):
-    """Common interface every provider client must implement."""
+    """
+    Common interface every provider client must implement. last_usage is
+    set by real clients after each generate() call to {"input_tokens":
+    int, "output_tokens": int} from the provider SDK's own response —
+    used by eval_models.py for real (not estimated) cost accounting.
+    MockClient leaves it None since there's no real usage to report.
+    """
+
+    last_usage: dict[str, int] | None = None
 
     @abstractmethod
     def generate(self, system_prompt: str, user_message: str) -> str:
@@ -61,6 +69,10 @@ class AnthropicClient(LLMClient):
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
         )
+        self.last_usage = {
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+        }
         return "".join(block.text for block in response.content if getattr(block, "type", "") == "text")
 
 
@@ -82,6 +94,11 @@ class OpenAIClient(LLMClient):
             ],
             temperature=0.4,
         )
+        if response.usage:
+            self.last_usage = {
+                "input_tokens": response.usage.prompt_tokens,
+                "output_tokens": response.usage.completion_tokens,
+            }
         return response.choices[0].message.content
 
 
@@ -109,6 +126,12 @@ class GroqClient(LLMClient):
                 ("human", user_message),
             ]
         )
+        usage = getattr(response, "usage_metadata", None)
+        if usage:
+            self.last_usage = {
+                "input_tokens": usage.get("input_tokens", 0),
+                "output_tokens": usage.get("output_tokens", 0),
+            }
         return response.content
 
 
@@ -155,6 +178,7 @@ class MockClient(LLMClient):
                     "trend categories the retailer is expanding into",
                     "public statements about supply-chain challenges",
                 ],
+                "product_document_summary": "",
             }
         elif role == "company_research":
             payload = {
@@ -172,6 +196,7 @@ class MockClient(LLMClient):
                     }
                 ],
                 "financial_summary": "No public filings found; appears to be privately held",
+                "filing_highlights": [],
                 "confidence": "medium",
                 "sources": [
                     "https://example-boutique-retailer.com",
@@ -236,6 +261,7 @@ class MockClient(LLMClient):
                     }
                 ],
                 "financial_summary": "No public filings found; appears to be privately held",
+                "filing_highlights": [],
                 "recommended_strategy": (
                     "Lead with curated scarcity and margin upside; request a short intro call"
                 ),

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import UTC, datetime
 
 from agents.account_intake_agent import AccountIntakeAgent
 from agents.company_research_agent import CompanyResearchAgent
@@ -28,11 +29,35 @@ from agents.sales_recommendation_agent import SalesRecommendationAgent
 from llm_client import LLMClient
 from memory import ScoutlyMemory
 from sourcing_channels import SOURCING_CHANNELS
-from web_research import Fetcher, PageContent, get_fetcher, lookup_public_filings
+from web_research import (
+    Fetcher,
+    HttpFetcher,
+    PageContent,
+    fetch_filing_sections,
+    get_fetcher,
+    lookup_public_filings,
+)
 
 # Homepage + up to this many discovered subpages (leadership/press/about/etc)
 # per company. Bounds how many HTTP requests one research run can trigger.
 _MAX_COMPANY_SUBPAGES = 3
+
+
+def _guess_company_name_candidates(title: str) -> list[str]:
+    """
+    Pure function: a fetched homepage's <title> -> candidate company names to
+    try against SEC EDGAR, in order. Titles vary in which half holds the
+    actual name — "Palo Alto Networks — Cybersecurity Leader" vs "Leader in
+    Cybersecurity... - Palo Alto Networks" both appear in the wild — so try
+    both halves of the first separator rather than assuming one order.
+    """
+    if not title:
+        return []
+    for sep in ("—", "-", "|"):
+        if sep in title:
+            parts = [p.strip() for p in title.split(sep, 1)]
+            return [p for p in parts if p]
+    return [title.strip()]
 
 
 class ScoutlyOrchestrator:
@@ -65,11 +90,12 @@ class ScoutlyOrchestrator:
     def _log(self, agent: str, input_payload: dict, output_payload: dict) -> None:
         self.transcript.append({"agent": agent, "input": input_payload, "output": output_payload})
 
-    def _fetch_company_pages(self, company_url: str) -> list[PageContent]:
-        """Fetches the company's homepage plus a few discovered subpages
-        (leadership/press/about/etc), capped so one run can't fan out
-        unboundedly."""
-        pages = [self.fetcher.fetch_page(company_url)]
+    def _fetch_pages_with_subpages(self, url: str) -> list[PageContent]:
+        """Fetches a homepage plus a few discovered subpages (leadership/
+        press/about/etc), capped so one run can't fan out unboundedly. Used
+        for both the target company and each competitor — a competitor's
+        public research deserves the same depth as the prospect's."""
+        pages = [self.fetcher.fetch_page(url)]
         for link in pages[0].links[:_MAX_COMPANY_SUBPAGES]:
             pages.append(self.fetcher.fetch_page(link))
         return pages
@@ -82,6 +108,17 @@ class ScoutlyOrchestrator:
             {"url": p.url, "title": p.title, "text": p.text, "error": p.error} for p in pages
         ]
 
+    def _lookup_filings_for(self, company_pages: list[PageContent]) -> list:
+        """Tries each name candidate from the fetched homepage's title
+        against EDGAR in turn, stopping at the first one that returns real
+        filings — see _guess_company_name_candidates for why more than one
+        candidate is needed."""
+        for candidate in _guess_company_name_candidates(company_pages[0].title):
+            filings = lookup_public_filings(candidate, contact_email=self.sec_edgar_contact_email)
+            if filings:
+                return filings
+        return []
+
     def run_account_brief(
         self,
         rep_product_name: str,
@@ -90,13 +127,17 @@ class ScoutlyOrchestrator:
         company_url: str,
         competitor_urls: list[str],
         product_category: str = "",
+        product_document_text: str = "",
     ) -> dict:
         """
         Runs one full Account Intake -> Company Research -> Competitor ->
         Sales Recommendation -> Report pass for a single target account,
         updating self.memory at each step. Returns every agent's structured
         output plus a flattened list of real source URLs for the UI's
-        Action Links section.
+        Action Links section. product_document_text is the optional
+        extracted text of an uploaded product-overview file (see
+        document_intake.py) — the CAP 931 brief's optional "upload a
+        proprietary internal sheet" input.
         """
         intake_input = {
             "rep_product_name": rep_product_name,
@@ -105,31 +146,42 @@ class ScoutlyOrchestrator:
             "target_customer_name": target_customer_name,
             "company_url": company_url,
             "competitor_urls": competitor_urls,
+            "product_document_text": product_document_text,
         }
         intake_output = self.account_intake_agent.run(self.memory, intake_input)
         self.memory.update_from_account_intake(intake_output)
         self._log("account_intake", intake_input, intake_output)
 
-        company_pages = self._fetch_company_pages(company_url)
-        # EDGAR is queried against the company being researched, not the
-        # rep's own product — best-effort name guess from the fetched title.
-        company_name_guess = (company_pages[0].title or company_url).split("—")[0].split("-")[0].strip()
-        edgar_filings = lookup_public_filings(company_name_guess, contact_email=self.sec_edgar_contact_email)
+        company_pages = self._fetch_pages_with_subpages(company_url)
+        edgar_filings = self._lookup_filings_for(company_pages)
+
+        # Only fetch full filing text for the single most recent filing, and
+        # only against a real fetcher — mock mode should never make network
+        # calls, and fetching every filing's full text would be needlessly
+        # slow/costly for one research run.
+        filing_sections: dict[str, str] = {}
+        if edgar_filings and isinstance(self.fetcher, HttpFetcher):
+            filing_sections = fetch_filing_sections(
+                edgar_filings[0].filing_url, contact_email=self.sec_edgar_contact_email
+            )
 
         company_research_input = {
             "company_url": company_url,
             "fetched_pages": self._pages_as_dicts(company_pages),
             "edgar_filings": [vars(f) for f in edgar_filings],  # FilingInfo -> dict, same reason as above
+            "filing_sections": filing_sections,
             "intake_summary": intake_output,
         }
         company_research_output = self.company_research_agent.run(self.memory, company_research_input)
         self.memory.update_from_company_research(company_url, company_research_output)
         self._log("company_research", company_research_input, company_research_output)
 
-        competitor_pages = {url: self.fetcher.fetch_page(url) for url in competitor_urls}
+        competitor_pages = {url: self._fetch_pages_with_subpages(url) for url in competitor_urls}
         competitor_input = {
             "competitor_urls": competitor_urls,
-            "fetched_pages": {url: vars(p) for url, p in competitor_pages.items()},  # PageContent -> dict
+            "fetched_pages": {
+                url: self._pages_as_dicts(pages) for url, pages in competitor_pages.items()
+            },
             "value_proposition": value_proposition,
             "company_research_summary": company_research_output,
         }
@@ -174,6 +226,54 @@ class ScoutlyOrchestrator:
             "sales_recommendation": recommendation_output,
             "report": report_output,
             "sources": sources,
+        }
+
+    def check_for_updates(self, company_url: str, competitor_urls: list[str]) -> dict:
+        """
+        Re-fetches the target company and competitor pages and reruns just
+        Company Research + Competitor (not the full five-agent chain —
+        intake and the sales recommendation don't need rerunning to detect
+        whether anything changed), then reports which known_account_facts
+        are genuinely new since the last time this account was researched.
+
+        This is the real, working half of an "alert system": rerun +
+        detect changes. It does not run itself on a schedule — Streamlit
+        Cloud's free tier has no persistent background scheduler for that —
+        see check_for_updates.py, which is meant to be invoked by an
+        external scheduler (cron / Task Scheduler) for the "periodically
+        rerun and notify" behavior.
+        """
+        facts_before = list(self.memory.known_account_facts)
+
+        company_pages = self._fetch_pages_with_subpages(company_url)
+        edgar_filings = self._lookup_filings_for(company_pages)
+        company_research_input = {
+            "company_url": company_url,
+            "fetched_pages": self._pages_as_dicts(company_pages),
+            "edgar_filings": [vars(f) for f in edgar_filings],
+            "filing_sections": {},  # deep filing text rarely changes day-to-day; skip for speed
+            "intake_summary": {},
+        }
+        company_research_output = self.company_research_agent.run(self.memory, company_research_input)
+        self.memory.update_from_company_research(company_url, company_research_output)
+        self._log("company_research", company_research_input, company_research_output)
+
+        competitor_pages = {url: self._fetch_pages_with_subpages(url) for url in competitor_urls}
+        competitor_input = {
+            "competitor_urls": competitor_urls,
+            "fetched_pages": {url: self._pages_as_dicts(pages) for url, pages in competitor_pages.items()},
+            "value_proposition": self.memory.account_profile.get("value_proposition", ""),
+            "company_research_summary": company_research_output,
+        }
+        competitor_output = self.competitor_agent.run(self.memory, competitor_input)
+        self.memory.update_from_competitor_research(competitor_output)
+        self._log("competitor", competitor_input, competitor_output)
+
+        new_facts = [fact for fact in self.memory.known_account_facts if fact not in facts_before]
+        return {
+            "company_url": company_url,
+            "new_facts": new_facts,
+            "checked_at": datetime.now(UTC).isoformat(),
         }
 
     def handle_prospect_objection(self, objection_text: str) -> dict:

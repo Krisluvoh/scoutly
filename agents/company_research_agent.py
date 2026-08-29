@@ -7,8 +7,10 @@ page content as context (see orchestrator.py).
 Unlike a model reasoning about a bare URL from general knowledge, this
 agent is handed actual fetched text from the target company's site (and any
 discovered leadership/press/careers subpages), plus SEC EDGAR filing
-metadata when the company is public. Its job is to extract and synthesize
-from that real material — not to invent specifics it wasn't given.
+metadata and — for the most recent filing, when the company is public and
+real HTTP fetching is enabled — actual excerpted 10-K section text (Risk
+Factors, MD&A, Cybersecurity). Its job is to extract and synthesize from
+that real material — not to invent specifics it wasn't given.
 
 Output is validated against schemas.CompanyResearchOutput by BaseAgent.run().
 """
@@ -38,6 +40,12 @@ note if one appears) — do not invent executives who aren't mentioned in the so
 company (size, filing recency). If none are provided or the company appears private, say \
 so plainly in financial_summary — "no public filings found" is a legitimate, expected \
 answer, not a failure.
+- If FILING SECTIONS text is given (excerpts of the most recent 10-K's Risk Factors, MD&A, \
+or Cybersecurity disclosures), extract 2-4 concrete filing_highlights grounded in that \
+exact text — a stated strategic priority, a disclosed risk, a cybersecurity posture note. \
+If a section came back empty (not every filing has a Cybersecurity item, for example) or \
+no filing sections were given at all, leave filing_highlights empty — never invent 10-K \
+content that wasn't in the text you were given.
 - List every URL you actually drew information from in "sources" (from FETCHED PAGE \
 CONTENT and EDGAR FILINGS given to you) — these become the brief's action links, so never \
 list a URL you weren't given.
@@ -56,6 +64,7 @@ shape:
     {"name": "", "title": "", "quote_or_note": ""}
   ],
   "financial_summary": "",
+  "filing_highlights": [],
   "confidence": "",
   "sources": [],
   "evaluation": {

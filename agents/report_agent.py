@@ -32,6 +32,8 @@ Research into one prioritized list.
 - leadership_information: carry forward the leadership list from Company Research \
 unchanged (do not invent additional names).
 - financial_summary: carry forward the Company Research Agent's financial_summary.
+- filing_highlights: carry forward the Company Research Agent's filing_highlights \
+unchanged, if any were given (omit if none were given — do not invent 10-K content).
 - recommended_strategy: condense the Sales Recommendation Agent's recommended_approach, \
 top talking points, and time_sensitive_signals into one actionable paragraph.
 - sourcing_recommendation: carry forward the Sales Recommendation Agent's \
@@ -51,6 +53,7 @@ shape:
     {"name": "", "title": "", "quote_or_note": ""}
   ],
   "financial_summary": "",
+  "filing_highlights": [],
   "recommended_strategy": "",
   "sourcing_recommendation": {
     "channel_type": "",

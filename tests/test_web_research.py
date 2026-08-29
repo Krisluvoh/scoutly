@@ -5,7 +5,15 @@ _parse_html and _parse_edgar_atom are tested directly against fixture
 strings so these run entirely offline — no live HTTP or SEC EDGAR calls.
 """
 
-from web_research import MockFetcher, _is_safe_url, _parse_edgar_search_json, _parse_html, get_fetcher
+from web_research import (
+    MockFetcher,
+    _extract_section,
+    _find_primary_document_url,
+    _is_safe_url,
+    _parse_edgar_search_json,
+    _parse_html,
+    get_fetcher,
+)
 
 SAMPLE_HTML = """
 <html>
@@ -103,3 +111,54 @@ def test_is_safe_url_rejects_loopback_and_private_hosts():
     assert _is_safe_url("http://localhost/") is False
     assert _is_safe_url("http://127.0.0.1/") is False
     assert _is_safe_url("http://192.168.1.1/") is False
+
+
+SAMPLE_FILING_INDEX_HTML = """
+<html><body>
+<a href="/index.htm">SEC Home</a>
+<a href="/ix?doc=/Archives/edgar/data/123/000012300024000001/acme-20240731.htm">acme-20240731.htm</a>
+<a href="/Archives/edgar/data/123/000012300024000001/acmeex211subsidiaries.htm">acmeex211subsidiaries.htm</a>
+</body></html>
+"""
+
+SAMPLE_FILING_INDEX_HTML_NO_IX = """
+<html><body>
+<a href="/index.htm">SEC Home</a>
+<a href="/Archives/edgar/data/123/000012300024000001/acme-20240731.htm">acme-20240731.htm</a>
+<a href="/Archives/edgar/data/123/000012300024000001/acmeex211subsidiaries.htm">acmeex211subsidiaries.htm</a>
+</body></html>
+"""
+
+_SAMPLE_INDEX_URL = (
+    "https://www.sec.gov/Archives/edgar/data/123/000012300024000001/0000123-24-000001-index.htm"
+)
+
+
+def test_find_primary_document_url_uses_ix_doc_wrapper_when_present():
+    url = _find_primary_document_url(SAMPLE_FILING_INDEX_HTML, _SAMPLE_INDEX_URL)
+    assert url == "https://www.sec.gov/Archives/edgar/data/123/000012300024000001/acme-20240731.htm"
+
+
+def test_find_primary_document_url_falls_back_to_first_same_folder_htm():
+    url = _find_primary_document_url(SAMPLE_FILING_INDEX_HTML_NO_IX, _SAMPLE_INDEX_URL)
+    assert url == "https://www.sec.gov/Archives/edgar/data/123/000012300024000001/acme-20240731.htm"
+
+
+def test_find_primary_document_url_returns_none_when_nothing_matches():
+    assert _find_primary_document_url("<html><body>no links here</body></html>", _SAMPLE_INDEX_URL) is None
+
+
+def test_extract_section_returns_text_after_last_header_match():
+    text = (
+        "Table of Contents Item 1A Risk Factors ... (page 12) "
+        "Item 7 Management's Discussion ... (page 40) "
+        "Item 1A Risk Factors Our business faces significant competition. "
+        "Item 1B Unresolved Staff Comments None."
+    )
+    section = _extract_section(text, r"Item\s+1A\.?\s*Risk\s*Factors")
+    assert "significant competition" in section
+    assert "Unresolved Staff Comments" not in section
+
+
+def test_extract_section_returns_empty_string_when_pattern_not_found():
+    assert _extract_section("no relevant headers here", r"Item\s+1C\.?\s*Cybersecurity") == ""

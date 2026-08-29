@@ -6,6 +6,9 @@
     "value_proposition": "We find and secure hard-to-find, high-margin trend inventory so your buying team doesn't have to chase drops themselves",
     "target_customer_name": "Head Buyer",
     "company_url": "https://example-boutique-retailer.com",
+    "competitor_urls": [
+      "https://example-retail-competitor.com"
+    ],
     "last_differentiation_angle": "Lead with curated scarcity/authenticity rather than raw catalog size",
     "last_recommended_approach": "Lead with curated scarcity and margin upside, not price"
   },
@@ -22,7 +25,7 @@
       "company_url": "https://www.thredup.com",
       "confidence": "medium",
       "summary": "Expanding its Y2K and streetwear assortment to reach a younger shopper",
-      "timestamp": "2026-08-28T19:59:44.114851+00:00"
+      "timestamp": "2026-08-29T00:13:55.182751+00:00"
     }
   ],
   "account_signals": {
@@ -30,5 +33,5 @@
       "last_financial_summary": "No public filings found; appears to be privately held"
     }
   },
-  "last_updated": "2026-08-28T19:59:44.114851+00:00"
+  "last_updated": "2026-08-29T00:13:55.185773+00:00"
 }

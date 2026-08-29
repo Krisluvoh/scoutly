@@ -107,6 +107,8 @@ langchain-protocol==0.0.18
     # via langchain-core
 langsmith==0.10.18
     # via langchain-core
+lxml==6.1.2
+    # via python-docx
 markupsafe==3.0.3
     # via jinja2
 narwhals==2.24.0
@@ -148,8 +150,12 @@ pydantic-core==2.46.4
     # via pydantic
 pydeck==0.9.3
     # via streamlit
+pypdf==6.16.2
+    # via scoutly
 python-dateutil==2.9.0.post0
     # via pandas
+python-docx==1.2.0
+    # via scoutly
 python-dotenv==1.2.2
     # via scoutly
 python-multipart==0.0.32
@@ -212,6 +218,7 @@ typing-extensions==4.16.0
     #   openai
     #   pydantic
     #   pydantic-core
+    #   python-docx
     #   referencing
     #   starlette
     #   streamlit

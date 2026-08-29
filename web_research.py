@@ -18,6 +18,7 @@ reports") that isn't just "read a web page".
 from __future__ import annotations
 
 import ipaddress
+import re
 import socket
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -240,3 +241,91 @@ def lookup_public_filings(
     except (requests.RequestException, ValueError):
         return []
     return _parse_edgar_search_json(data)[:_MAX_FILINGS]
+
+
+# ---------- Deeper 10-K analysis: real section text, not just metadata ----------
+
+_FILING_SECTION_PATTERNS = {
+    "risk_factors": r"Item\s+1A\.?\s*Risk\s*Factors",
+    "mda": r"Item\s+7\.?\s*Management.?s\s*Discussion\s*and\s*Analysis",
+    "cybersecurity": r"Item\s+1C\.?\s*Cybersecurity",
+}
+_NEXT_ITEM_HEADER = re.compile(r"\bItem\s+\d+[A-Z]?\.?", re.IGNORECASE)
+_SECTION_EXCERPT_CHARS = 4000
+
+
+def _find_primary_document_url(index_html: str, index_url: str) -> str | None:
+    """
+    Pure function: EDGAR filing-index HTML -> absolute URL of the primary
+    filing document (not an exhibit). EDGAR wraps the primary document of
+    an inline-XBRL filing in an "/ix?doc=..." viewer link, a reliable
+    signal (verified live against a real Palo Alto Networks 10-K index
+    page). Falls back to the first same-folder .htm document for older,
+    pre-iXBRL filings.
+    """
+    match = re.search(r'/ix\?doc=([^"\s]+\.htm)', index_html, re.IGNORECASE)
+    if match:
+        return urljoin(index_url, match.group(1))
+
+    soup = BeautifulSoup(index_html, "html.parser")
+    folder = index_url.rsplit("/", 1)[0] + "/"
+    for anchor in soup.find_all("a", href=True):
+        href = anchor["href"]
+        if not href.lower().endswith(".htm"):
+            continue
+        absolute = urljoin(index_url, href)
+        if absolute.startswith(folder) and "index" not in absolute.lower():
+            return absolute
+    return None
+
+
+def _extract_section(text: str, section_pattern: str) -> str:
+    """
+    Pure function: finds the LAST match of section_pattern in text — the
+    first match in a 10-K is almost always its table of contents, not the
+    actual section — and returns text up to the next "Item N" header or a
+    length cap, whichever comes first. Returns "" if the pattern never
+    matches, so a missing section reads as "not found," not fabricated.
+    """
+    matches = list(re.finditer(section_pattern, text, re.IGNORECASE))
+    if not matches:
+        return ""
+    start = matches[-1].end()
+    next_item = _NEXT_ITEM_HEADER.search(text, start)
+    end = min(next_item.start() if next_item else len(text), start + _SECTION_EXCERPT_CHARS)
+    return text[start:end].strip()
+
+
+def fetch_filing_sections(
+    filing_index_url: str, contact_email: str = "capstone-project@example.com"
+) -> dict[str, str]:
+    """
+    Best-effort fetch of a 10-K's actual Risk Factors / MD&A / Cybersecurity
+    section text (not just filing metadata), so the Company Research Agent
+    can ground filing_highlights in real disclosure language. Returns empty
+    strings (not an error) for any section it can't locate or fetch — same
+    honesty pattern as lookup_public_filings: "not found" is a legitimate
+    result, never a reason to invent content.
+    """
+    sections = dict.fromkeys(_FILING_SECTION_PATTERNS, "")
+    if not filing_index_url:
+        return sections
+
+    headers = {"User-Agent": f"Scoutly-Capstone ({contact_email})"}
+    try:
+        index_response = requests.get(filing_index_url, headers=headers, timeout=_REQUEST_TIMEOUT)
+        index_response.raise_for_status()
+    except requests.RequestException:
+        return sections
+
+    document_url = _find_primary_document_url(index_response.text, filing_index_url)
+    if not document_url:
+        return sections
+    try:
+        doc_response = requests.get(document_url, headers=headers, timeout=_REQUEST_TIMEOUT)
+        doc_response.raise_for_status()
+    except requests.RequestException:
+        return sections
+
+    text = " ".join(BeautifulSoup(doc_response.text, "html.parser").get_text(separator=" ").split())
+    return {name: _extract_section(text, pattern) for name, pattern in _FILING_SECTION_PATTERNS.items()}

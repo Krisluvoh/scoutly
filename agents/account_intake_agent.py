@@ -33,6 +33,10 @@ Recommendation agents will need (e.g. no competitor URLs given, vague value prop
 - List research_priorities: the 2-4 things most worth researching first about this \
 account given what the rep is selling (e.g. "recent leadership changes", "compliance \
 posture", "hiring in the relevant department").
+- If PRODUCT DOCUMENT TEXT is given in NEW INPUT (an uploaded product overview), \
+condense it into product_document_summary, and prefer it over sparse manual fields when \
+inferring product_category or filling gaps in value_proposition. If no document text is \
+given, leave product_document_summary empty — never invent document content.
 - Incorporate MEMORY CONTEXT: do not contradict prior stated account facts unless the \
 new input corrects them.
 
@@ -48,6 +52,7 @@ shape:
   "competitor_urls": [],
   "missing_info": [],
   "research_priorities": [],
+  "product_document_summary": "",
   "evaluation": {
     "relevance": 0,
     "clarity": 0,

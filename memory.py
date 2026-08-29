@@ -48,6 +48,9 @@ class ScoutlyMemory:
                 "value_proposition": intake_output.get("value_proposition"),
                 "target_customer_name": intake_output.get("target_customer_name"),
                 "company_url": intake_output.get("company_url"),
+                # Kept so a later check_for_updates() run knows what to
+                # re-check without the rep re-entering competitor URLs.
+                "competitor_urls": intake_output.get("competitor_urls"),
             }
         )
         self._touch()
