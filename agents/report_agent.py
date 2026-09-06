@@ -36,8 +36,8 @@ unchanged (do not invent additional names).
 unchanged, if any were given (omit if none were given — do not invent 10-K content).
 - recommended_strategy: condense the Sales Recommendation Agent's recommended_approach, \
 top talking points, and time_sensitive_signals into one actionable paragraph.
-- sourcing_recommendation: carry forward the Sales Recommendation Agent's \
-sourcing_recommendation unchanged, if one was given to you (omit it if none was given — \
+- engagement_recommendation: carry forward the Sales Recommendation Agent's \
+engagement_recommendation unchanged, if one was given to you (omit it if none was given — \
 do not invent one).
 - action_links: merge every source URL from Company Research and Competitor research into \
 one deduplicated list — this is what lets the rep click through to the original material.
@@ -55,10 +55,10 @@ shape:
   "financial_summary": "",
   "filing_highlights": [],
   "recommended_strategy": "",
-  "sourcing_recommendation": {
-    "channel_type": "",
-    "recommended_platforms": [],
-    "margin_notes": ""
+  "engagement_recommendation": {
+    "engagement_type": "",
+    "recommended_approach": [],
+    "notes": ""
   },
   "action_links": [],
   "evaluation": {

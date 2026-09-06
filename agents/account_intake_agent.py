@@ -39,6 +39,9 @@ inferring product_category or filling gaps in value_proposition. If no document 
 given, leave product_document_summary empty — never invent document content.
 - Incorporate MEMORY CONTEXT: do not contradict prior stated account facts unless the \
 new input corrects them.
+- Pass practice_area through unchanged if one is given in NEW INPUT — it's chosen from a \
+fixed list of consulting/advisory practices in the UI, not something you infer or clean up. \
+If none is given, leave it empty.
 
 You must respond with ONLY a single JSON object, no other text, matching exactly this \
 shape:
@@ -53,6 +56,7 @@ shape:
   "missing_info": [],
   "research_priorities": [],
   "product_document_summary": "",
+  "practice_area": "",
   "evaluation": {
     "relevance": 0,
     "clarity": 0,

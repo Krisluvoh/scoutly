@@ -37,6 +37,7 @@ from document_intake import extract_text
 from llm_client import get_client
 from memory import ScoutlyMemory
 from orchestrator import ScoutlyOrchestrator
+from practice_playbooks import PRACTICE_PLAYBOOKS
 from web_research import get_fetcher
 
 load_dotenv()
@@ -329,6 +330,23 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-bright) !importa
 </style>
 """
 
+_GENERAL_PRACTICE_LABEL = "General / Other (no practice-specific playbook)"
+# Ordered so the selectbox always lists "General" first, then playbooks in
+# PRACTICE_PLAYBOOKS' own definition order. "" (General) is a legitimate
+# key, not a missing one — see orchestrator.run_account_brief.
+PRACTICE_AREA_LABELS: dict[str, str] = {
+    "": _GENERAL_PRACTICE_LABEL,
+    **{key: playbook["label"] for key, playbook in PRACTICE_PLAYBOOKS.items()},
+}
+_PRACTICE_KEY_BY_LABEL = {label: key for key, label in PRACTICE_AREA_LABELS.items()}
+
+
+def _practice_label(practice_area: str) -> str:
+    """practice_area key -> its display label, falling back to the raw
+    value (or "General") so a stale/unknown key never crashes the UI."""
+    return PRACTICE_PLAYBOOKS.get(practice_area, {}).get("label") or practice_area or _GENERAL_PRACTICE_LABEL
+
+
 _LOADING_HTML = """
 <div class="sc-loading">
     <p class="sc-loading-label">{label}<span class="sc-dots">
@@ -388,6 +406,7 @@ def _render_result(result: dict) -> None:
             [
                 ("Selling", intake.get("rep_product_name")),
                 ("Category", intake.get("product_category")),
+                ("Practice", _practice_label(intake.get("practice_area", ""))),
                 ("Target contact", intake.get("target_customer_name")),
                 ("Research priorities", ", ".join(intake.get("research_priorities") or []) or "—"),
                 ("Uploaded document summary", intake.get("product_document_summary")),
@@ -425,15 +444,15 @@ def _render_result(result: dict) -> None:
         unsafe_allow_html=True,
     )
 
-    sourcing = report.get("sourcing_recommendation") or rec.get("sourcing_recommendation")
-    if sourcing:
+    engagement = report.get("engagement_recommendation") or rec.get("engagement_recommendation")
+    if engagement:
         st.markdown(
             _panel(
-                "Recommended Sourcing Strategy",
+                "Recommended Engagement",
                 [
-                    ("Channel", sourcing.get("channel_type")),
-                    ("Platforms", ", ".join(sourcing.get("recommended_platforms") or []) or "—"),
-                    ("Margin notes", sourcing.get("margin_notes")),
+                    ("Engagement type", engagement.get("engagement_type")),
+                    ("Recommended approach", ", ".join(engagement.get("recommended_approach") or []) or "—"),
+                    ("Notes", engagement.get("notes")),
                 ],
             ),
             unsafe_allow_html=True,
@@ -584,15 +603,15 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
             "10-K Highlights",
             [("From the most recent public filing", ", ".join(report["filing_highlights"]))],
         )
-    sourcing = report.get("sourcing_recommendation") or rec.get("sourcing_recommendation")
-    if sourcing:
+    engagement = report.get("engagement_recommendation") or rec.get("engagement_recommendation")
+    if engagement:
         _pdf_section(
             pdf,
-            "Recommended Sourcing Strategy",
+            "Recommended Engagement",
             [
-                ("Channel", sourcing.get("channel_type")),
-                ("Platforms", ", ".join(sourcing.get("recommended_platforms") or []) or None),
-                ("Margin notes", sourcing.get("margin_notes")),
+                ("Engagement type", engagement.get("engagement_type")),
+                ("Recommended approach", ", ".join(engagement.get("recommended_approach") or []) or None),
+                ("Notes", engagement.get("notes")),
             ],
         )
     _pdf_section(
@@ -654,6 +673,14 @@ with st.form("intake_form"):
     product_category = st.text_input(
         "Product Category (optional)", placeholder="Leave blank to let the agent infer it"
     )
+    practice_area_label = st.selectbox(
+        "Consulting / Advisory Practice (optional)",
+        options=list(PRACTICE_AREA_LABELS.values()),
+        help=(
+            "Grounds research and the engagement recommendation in real, practice-specific "
+            "signals and engagement models instead of generic sales boilerplate."
+        ),
+    )
     company_url = st.text_input("Target Company URL", placeholder="https://www.example-boutique-retailer.com")
     competitor_urls_raw = st.text_area(
         "Competitor URLs (one per line)",
@@ -686,6 +713,7 @@ if submitted:
             competitor_urls=competitor_urls,
             product_category=product_category,
             product_document_text=product_document_text,
+            practice_area=_PRACTICE_KEY_BY_LABEL[practice_area_label],
         )
         loading.empty()
         st.session_state.orchestrator = orchestrator

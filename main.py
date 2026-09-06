@@ -39,6 +39,7 @@ SCENARIOS = [
         "target_customer_name": "Head Buyer",
         "company_url": "https://www.urbanoutfitters.com",
         "competitor_urls": ["https://www.freepeople.com", "https://www.princesspolly.com"],
+        "practice_area": "retail_trend_sourcing",
         "follow_up_objection": "We already have an informal relationship with a few boutique suppliers.",
     },
     {
@@ -52,6 +53,7 @@ SCENARIOS = [
         "target_customer_name": "Merchandising Director",
         "company_url": "https://www.asos.com",
         "competitor_urls": ["https://www.prettylittlething.com"],
+        "practice_area": "retail_trend_sourcing",
         "follow_up_objection": None,
     },
     {
@@ -65,6 +67,7 @@ SCENARIOS = [
         "target_customer_name": "VP of Merchandising",
         "company_url": "https://www.thredup.com",
         "competitor_urls": ["https://www.therealreal.com"],
+        "practice_area": "retail_trend_sourcing",
         "follow_up_objection": "We're already committed to a liquidation vendor through year-end.",
     },
 ]
@@ -93,6 +96,7 @@ def run_all(provider: str = "mock", fetch_mode: str = "mock") -> None:
             company_url=scenario["company_url"],
             competitor_urls=scenario["competitor_urls"],
             product_category=scenario["product_category"],
+            practice_area=scenario["practice_area"],
         )
 
         print("\n--- ACCOUNT INTAKE AGENT OUTPUT ---")

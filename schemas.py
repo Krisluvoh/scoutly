@@ -35,6 +35,7 @@ class AccountIntakeOutput(BaseModel):
     missing_info: list[str] = Field(default_factory=list)
     research_priorities: list[str] = Field(default_factory=list)
     product_document_summary: str = ""
+    practice_area: str = ""
     evaluation: Evaluation | None = None
 
 
@@ -79,13 +80,13 @@ class CompetitorOutput(BaseModel):
     evaluation: Evaluation | None = None
 
 
-class SourcingRecommendation(BaseModel):
-    """Which sourcing channel (see sourcing_channels.py) best fits the
-    target account's apparent trend focus, and why."""
+class EngagementRecommendation(BaseModel):
+    """Which engagement model (see practice_playbooks.py) best fits the
+    target account and the rep's selected practice area, and why."""
 
-    channel_type: str = ""
-    recommended_platforms: list[str] = Field(default_factory=list)
-    margin_notes: str = ""
+    engagement_type: str = ""
+    recommended_approach: list[str] = Field(default_factory=list)
+    notes: str = ""
 
 
 class SalesRecommendationOutput(BaseModel):
@@ -97,7 +98,7 @@ class SalesRecommendationOutput(BaseModel):
     time_sensitive_signals: list[str] = Field(default_factory=list)
     next_steps: str = ""
     objection_handling: str = ""
-    sourcing_recommendation: SourcingRecommendation | None = None
+    engagement_recommendation: EngagementRecommendation | None = None
     evaluation: Evaluation | None = None
 
 
@@ -115,7 +116,7 @@ class AccountBriefOutput(BaseModel):
     financial_summary: str = ""
     filing_highlights: list[str] = Field(default_factory=list)
     recommended_strategy: str = ""
-    sourcing_recommendation: SourcingRecommendation | None = None
+    engagement_recommendation: EngagementRecommendation | None = None
     action_links: list[str] = Field(default_factory=list)
     evaluation: Evaluation | None = None
 

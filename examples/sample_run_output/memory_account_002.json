@@ -9,6 +9,7 @@
     "competitor_urls": [
       "https://example-retail-competitor.com"
     ],
+    "practice_area": "",
     "last_differentiation_angle": "Lead with curated scarcity/authenticity rather than raw catalog size",
     "last_recommended_approach": "Lead with curated scarcity and margin upside, not price"
   },
@@ -23,7 +24,7 @@
       "company_url": "https://www.asos.com",
       "confidence": "medium",
       "summary": "Expanding its Y2K and streetwear assortment to reach a younger shopper",
-      "timestamp": "2026-08-29T00:13:54.861360+00:00"
+      "timestamp": "2026-09-06T15:19:27.243643+00:00"
     }
   ],
   "account_signals": {
@@ -31,5 +32,5 @@
       "last_financial_summary": "No public filings found; appears to be privately held"
     }
   },
-  "last_updated": "2026-08-29T00:13:54.861360+00:00"
+  "last_updated": "2026-09-06T15:19:27.247857+00:00"
 }

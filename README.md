@@ -5,8 +5,21 @@ outreach. Give it what you're selling, your value proposition, the target
 company's URL, and its competitors' URLs, and five AI agents chain
 together to produce a one-page account intelligence brief: company
 strategy, leadership, press/compliance initiatives, competitive
-positioning, a public-filing summary, a sourcing-strategy recommendation,
+positioning, a public-filing summary, an engagement recommendation,
 and a recommended approach — with real, clickable source links.
+
+Scoutly isn't tied to one industry. A rep also picks a **consulting /
+advisory practice area** — Technology & AI Advisory, Cloud &
+Infrastructure, Cybersecurity & Risk, Data & Analytics, Digital
+Transformation, Supply Chain & Operations, or the original Retail Trend
+Sourcing scenario — and the same five-agent pipeline grounds its research
+priorities, its "what counts as a buying signal" logic, and its
+engagement-type recommendation in that practice's own real reference
+data (see `practice_playbooks.py`) instead of one hardcoded vertical.
+That's the shape a consulting/advisory firm — a technology practice at a
+company like Accenture, for example — would actually want: the same tool
+across practices, each one grounded in real, practice-specific signals
+rather than generic sales boilerplate.
 
 This was built for the Per Scholas CAP 931 capstone assignment ("Build a
 Sales Agent Prototype Using Multi-Agent GPT Models"). It runs on Claude by
@@ -38,7 +51,7 @@ uv run streamlit run streamlit_app.py
 That opens a local page where you enter your product, value proposition,
 target contact, and the prospect's company + competitor URLs, and get back
 an Account Snapshot → Company Research → Competitive Landscape →
-Recommended Sourcing Strategy → one-page Account Brief, plus a follow-up
+Recommended Engagement → one-page Account Brief, plus a follow-up
 box for logging a prospect's objection. Without an API key it falls back
 to mock LLM responses (the page-fetch step still runs for real against
 whatever URLs you enter, since that doesn't need a key).
@@ -104,14 +117,16 @@ memory.py                  ScoutlyMemory: cross-run contextual memory for one ac
 schemas.py                 pydantic schemas — one per agent's required JSON shape
 llm_client.py              pluggable model backend: Anthropic / OpenAI / Groq / Mock
 web_research.py            page fetching + SEC EDGAR (filing metadata and real 10-K section text)
-sourcing_channels.py       reference data on real trend-item sourcing channels (wholesale/liquidation/etc)
+practice_playbooks.py      industry-aware reference data per consulting practice area (research signals,
+                           trigger events, engagement models) — includes the original retail-sourcing
+                           scenario as one practice among several
 document_intake.py         extracts text from an optionally-uploaded PDF/DOCX/TXT product overview
 agents/
   base_agent.py                 shared prompt-building, JSON parsing, retry, validation
   account_intake_agent.py       Agent 1 — structures the rep's product/company/competitor input
   company_research_agent.py     Agent 2 — extracts strategy/leadership/compliance/10-K from fetched pages
   competitor_agent.py           Agent 3 — extracts competitive positioning from fetched competitor pages (+ subpages)
-  sales_recommendation_agent.py Agent 4 — talking points, objections, approach, sourcing/margin recommendation
+  sales_recommendation_agent.py Agent 4 — talking points, objections, approach, engagement recommendation
   report_agent.py               Agent 5 — assembles the one-page Account Intelligence Brief
 tests/
   test_llm_client.py          provider factory + mock output shape (all 5 roles)
@@ -153,11 +168,14 @@ fits fine since nothing here needs dynamic tool selection.
 is pitched as a curated trend-item **sourcing service** — "we find and
 secure hard-to-find, high-margin inventory so your buying team doesn't
 have to chase drops themselves" — sold to real boutique/retail companies
-(the target company). This keeps the sales direction ordinary (a rep
-selling a service to a prospect, not the reverse) while staying in the
-trend-item/resale space the sourcing-strategy feature is built around —
-see section 7 for how that resale-margin angle becomes a real feature, not
-just flavor text.
+(the target company), with the "Retail Trend Sourcing" practice area
+selected. This keeps the sales direction ordinary (a rep selling a
+service to a prospect, not the reverse) while staying in the trend-item/
+resale space the project started from — see section 7 for how that
+resale-margin angle becomes one of several practice-area playbooks, not
+just flavor text. Pick a different practice area (Cybersecurity & Risk,
+Cloud & Infrastructure, etc.) and the same pipeline runs the same way
+against a technology-consulting scenario instead.
 
 The brief asks for: product name, target company URL, product category,
 competitors, value proposition, and target customer. Scoutly's intake
@@ -172,6 +190,7 @@ form (`streamlit_app.py`) and `main.py` scenarios collect exactly these:
 | Value Proposition | `value_proposition` |
 | Target Customer | `target_customer_name` |
 | Optional: upload a proprietary internal sheet | `product_document_text` — a PDF/DOCX/TXT product overview uploaded via `st.file_uploader`, extracted by `document_intake.py`, summarized into `product_document_summary` and preferred over sparse manual fields when inferring `product_category` |
+| Optional: consulting/advisory practice area | `practice_area` — a key into `practice_playbooks.PRACTICE_PLAYBOOKS` (e.g. `"cybersecurity_risk"`); grounds Company Research and Sales Recommendation in that practice's own research signals, trigger events, and engagement models instead of generic sales boilerplate (see section 7) |
 
 You can also send a follow-up prospect objection, which routes straight to
 the Sales Recommendation Agent since handling objections is its job.
@@ -194,7 +213,7 @@ exactly `AccountBriefOutput` (`schemas.py`), produced by the Report Agent:
 
 Beyond the brief's required fields:
 - `report.filing_highlights` — for the single most recent public filing (when the fetch backend is real HTTP, not mock), `web_research.fetch_filing_sections` retrieves the primary filing document and extracts the actual Risk Factors, MD&A, and Cybersecurity section text (not just the filing's metadata), and the Company Research Agent grounds 2-4 concrete highlights in that real disclosure language.
-- `report.sourcing_recommendation` — given the target company's apparent trend focus (from Company Research), the Sales Recommendation Agent picks the best-fit sourcing channel and named platforms from `sourcing_channels.py` — a small reference table of real wholesale/liquidation/dropshipping/boutique/category-specific sourcing options — with margin reasoning grounded in that table's own notes, never invented.
+- `report.engagement_recommendation` — when a practice area is selected, given the target company's apparent situation (from Company Research), the Sales Recommendation Agent picks the best-fit engagement type and approach from that practice's `practice_playbooks.py` entry — real, named engagement models (e.g. "Security Posture Assessment" for Cybersecurity & Risk, "Wholesale" for Retail Trend Sourcing) — with notes grounded in that entry's own reference data, never invented. Omitted entirely (not a forced generic pick) when no practice area is selected.
 
 Competitor research gets the same depth as the target company: both go
 through `_fetch_pages_with_subpages` (homepage plus discovered leadership/
@@ -250,7 +269,7 @@ Independently, `SCOUTLY_FETCH_MODE` controls the page-fetching backend
 | Deeper 10-K analysis | `web_research.fetch_filing_sections` (section 5) — real Risk Factors/MD&A/Cybersecurity text, not just filing metadata |
 | Empirical model selection | `eval_models.py` (section 9) — measured JSON validity, schema compliance, an unsupported-claims proxy, latency, and cost across providers, not just a stated rationale |
 | Improved output strategy | The Report Agent exists specifically to synthesize four agents' output into one coherent one-pager instead of handing the rep four separate JSON blobs |
-| Domain-specific value-add beyond the base brief | `sourcing_recommendation` (see section 5) — a real, table-grounded resale-channel/margin recommendation, not just generic sales advice |
+| Domain-specific value-add beyond the base brief | `engagement_recommendation` (see section 5) — a real, playbook-grounded engagement-type recommendation, tuned to the rep's selected consulting/advisory practice area rather than one hardcoded vertical |
 | Deployment | Streamlit Community Cloud (see section 1) |
 
 ## 8. Checking for account updates
@@ -357,6 +376,19 @@ addresses from the server.
   (`sourcing_recommendation`, `sourcing_channels.py`) so the resale-margin
   angle became a real, differentiated feature rather than generic sales
   advice.
+- Generalized that single hardcoded retail-sourcing table into
+  `practice_playbooks.py`, a set of practice-area playbooks (Technology &
+  AI Advisory, Cloud & Infrastructure, Cybersecurity & Risk, Data &
+  Analytics, Digital Transformation, Supply Chain & Operations, plus the
+  original Retail Trend Sourcing scenario), each with its own research
+  signals, buying-trigger events, and engagement models — renaming
+  `sourcing_recommendation` to `engagement_recommendation` throughout, and
+  adding a practice-area selector to the intake form. The goal was making
+  Scoutly something a consulting/advisory firm could actually hand to its
+  own reps across practices, not just a retail-sourcing demo — including
+  making the offline mock fallback (what the public demo shows without an
+  API key) genuinely reflect whichever practice area is selected, rather
+  than always showing retail-flavored output regardless of input.
 - Split into its own standalone repository under the name Scoutly, with a
   full visual redesign to a clean B2B SaaS look.
 - Refined the visual identity further into a quieter, high-end look —
@@ -428,7 +460,7 @@ Scoutly meets the full scope of the CAP 931 brief:
 | Memory retention across research runs | ✅ | `memory.py`, section 3 |
 | Data integration (real page fetches, real SEC EDGAR filings and 10-K section text, competitor subpage discovery) | ✅ | Section 5, `web_research.py` |
 | Outputs (strategy, initiatives/compliance, competitive mentions, leadership, 10-K summary, action links) | ✅ | Section 5 |
-| Optional enhancements (rerun-based alert system, document upload, deeper 10-K analysis, empirical model comparison, output-strategy synthesis, sourcing/margin recommendation) | ✅ | Sections 7-9 |
+| Optional enhancements (rerun-based alert system, document upload, deeper 10-K analysis, empirical model comparison, output-strategy synthesis, practice-aware engagement recommendation) | ✅ | Sections 7-9 |
 | Production deployment considerations | ✅ | Section 16 |
 | Documentation (setup, time management, challenges, requirements, system outputs) | ✅ | This README + `examples/sample_run_output/` + `docs/screenshots/` |
 

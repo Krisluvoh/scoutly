@@ -145,6 +145,47 @@ class MockClient(LLMClient):
     OpenAIClient, or GroqClient for production use.
     """
 
+    @staticmethod
+    def _parse_new_input(user_message: str) -> dict:
+        """
+        Pulls the "NEW INPUT FOR THIS TURN (JSON)" block back out of
+        user_message (BaseAgent.build_user_message puts it there verbatim)
+        so the mock can ground its engagement_recommendation in whatever
+        practice playbook data it was actually given, the same way the
+        real agent is instructed to. Returns {} on any parse failure
+        (including plain, non-JSON strings passed directly in tests) —
+        the mock must never crash on unexpected input shape.
+        """
+        match = re.search(r"NEW INPUT FOR THIS TURN \(JSON\):\s*(\{.*\})", user_message, re.DOTALL)
+        candidate = match.group(1) if match else user_message
+        try:
+            return json.loads(candidate)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    @classmethod
+    def _mock_engagement_recommendation(cls, user_message: str) -> dict | None:
+        """
+        Builds the one piece of mock output that actually reflects real
+        input: engagement_models given directly (sales_recommendation
+        role) or an engagement_recommendation to carry forward from a
+        prior turn (report role). Everything else in the mock payloads
+        stays fixed canned demo data — this is the one spot where the
+        offline fallback needs to visibly respond to the rep's selected
+        practice area, since it's what the public demo shows by default.
+        """
+        new_input = cls._parse_new_input(user_message)
+        engagement_models = new_input.get("engagement_models")
+        if engagement_models:
+            first = engagement_models[0]
+            return {
+                "engagement_type": first.get("engagement_type", ""),
+                "recommended_approach": first.get("example_approach", []),
+                "notes": first.get("notes", ""),
+            }
+        recommendation_summary = new_input.get("recommendation_summary") or {}
+        return recommendation_summary.get("engagement_recommendation")
+
     def generate(self, system_prompt: str, user_message: str) -> str:
         # Match only the opening "You are the <Role> Agent..." sentence —
         # a naive substring search misfires because agents' own prompts
@@ -179,6 +220,11 @@ class MockClient(LLMClient):
                     "public statements about supply-chain challenges",
                 ],
                 "product_document_summary": "",
+                # Echoed straight from whatever was actually submitted, unlike the rest of
+                # this canned payload — otherwise the practice-area selector would visibly
+                # do nothing in the offline demo, which is exactly the feature it's meant
+                # to show off.
+                "practice_area": self._parse_new_input(user_message).get("practice_area", ""),
             }
         elif role == "company_research":
             payload = {
@@ -236,14 +282,7 @@ class MockClient(LLMClient):
                 "objection_handling": (
                     "If an existing sourcing relationship is mentioned, ask about typical fulfillment lag"
                 ),
-                "sourcing_recommendation": {
-                    "channel_type": "Boutique/Vintage",
-                    "recommended_platforms": ["Fleek", "Boutique by the Box"],
-                    "margin_notes": (
-                        "Fits this retailer's Y2K/curated-fashion focus and commands higher resale value "
-                        "than generic wholesale, per the Boutique/Vintage channel's own notes"
-                    ),
-                },
+                "engagement_recommendation": self._mock_engagement_recommendation(user_message),
             }
         else:
             payload = {
@@ -265,14 +304,7 @@ class MockClient(LLMClient):
                 "recommended_strategy": (
                     "Lead with curated scarcity and margin upside; request a short intro call"
                 ),
-                "sourcing_recommendation": {
-                    "channel_type": "Boutique/Vintage",
-                    "recommended_platforms": ["Fleek", "Boutique by the Box"],
-                    "margin_notes": (
-                        "Fits this retailer's Y2K/curated-fashion focus and commands higher resale value "
-                        "than generic wholesale, per the Boutique/Vintage channel's own notes"
-                    ),
-                },
+                "engagement_recommendation": self._mock_engagement_recommendation(user_message),
                 "action_links": [
                     "https://example-boutique-retailer.com",
                     "https://example-boutique-retailer.com/press",

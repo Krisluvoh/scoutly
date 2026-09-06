@@ -10,7 +10,8 @@
       "competitor_urls": [
         "https://www.prettylittlething.com"
       ],
-      "product_document_text": ""
+      "product_document_text": "",
+      "practice_area": "retail_trend_sourcing"
     },
     "output": {
       "rep_product_name": "Scoutly Curated Sourcing",
@@ -31,6 +32,7 @@
         "public statements about supply-chain challenges"
       ],
       "product_document_summary": "",
+      "practice_area": "",
       "evaluation": null
     }
   },
@@ -64,8 +66,44 @@
           "error": null
         }
       ],
-      "edgar_filings": [],
+      "edgar_filings": [
+        {
+          "company_name": "Adamis Pharmaceuticals Corp  (DMKPQ)  (CIK 0000887247)",
+          "form_type": "10-K",
+          "filing_date": "2013-07-03",
+          "filing_url": "https://www.sec.gov/Archives/edgar/data/887247/000138713113002469/0001387131-13-002469-index.htm"
+        },
+        {
+          "company_name": "PROGRESSIVE CORP/OH/  (PGR)  (CIK 0000080661)",
+          "form_type": "10-K",
+          "filing_date": "2020-03-02",
+          "filing_url": "https://www.sec.gov/Archives/edgar/data/80661/000008066120000006/0000080661-20-000006-index.htm"
+        },
+        {
+          "company_name": "InspireMD, Inc.  (NSPR)  (CIK 0001433607)",
+          "form_type": "10-K",
+          "filing_date": "2013-09-17",
+          "filing_url": "https://www.sec.gov/Archives/edgar/data/1433607/000114420413051239/0001144204-13-051239-index.htm"
+        },
+        {
+          "company_name": "WPCS INTERNATIONAL INC  (AYRO)  (CIK 0001086745)",
+          "form_type": "10-K",
+          "filing_date": "2013-07-29",
+          "filing_url": "https://www.sec.gov/Archives/edgar/data/1086745/000114420413041652/0001144204-13-041652-index.htm"
+        },
+        {
+          "company_name": "GOLDMAN SACHS GROUP INC  (GS, GSCE, GS-PA, GS-PC, GS-PD)  (CIK 0000886982)",
+          "form_type": "10-K",
+          "filing_date": "2026-02-25",
+          "filing_url": "https://www.sec.gov/Archives/edgar/data/886982/000088698226000091/0000886982-26-000091-index.htm"
+        }
+      ],
       "filing_sections": {},
+      "practice_research_signals": [
+        "Recent merchandising or buying-leadership changes",
+        "Trend categories the retailer is expanding into",
+        "Public statements about supply-chain or sourcing challenges"
+      ],
       "intake_summary": {
         "rep_product_name": "Scoutly Curated Sourcing",
         "product_category": "Trend-Item Sourcing & Curation Service",
@@ -85,6 +123,7 @@
           "public statements about supply-chain challenges"
         ],
         "product_document_summary": "",
+        "practice_area": "",
         "evaluation": null
       }
     },
@@ -216,6 +255,7 @@
           "public statements about supply-chain challenges"
         ],
         "product_document_summary": "",
+        "practice_area": "",
         "evaluation": null
       },
       "company_research_summary": {
@@ -261,53 +301,53 @@
         ],
         "evaluation": null
       },
-      "sourcing_channels": [
+      "practice_trigger_events": [
+        "A newly opened location or announced expansion",
+        "A new Head Buyer or merchandising leadership hire",
+        "A publicly discussed inventory glut or stockout"
+      ],
+      "engagement_models": [
         {
-          "channel_type": "Wholesale",
-          "example_platforms": [
+          "engagement_type": "Wholesale",
+          "example_approach": [
             "Alibaba",
             "Faire",
             "SaleHoo"
           ],
-          "best_for": "Clothing, home goods, beauty",
-          "notes": "Higher margins, requires upfront buying"
+          "notes": "Higher margins, requires upfront buying \u2014 best for clothing, home goods, beauty"
         },
         {
-          "channel_type": "Liquidation",
-          "example_platforms": [
+          "engagement_type": "Liquidation",
+          "example_approach": [
             "B-Stock",
             "QuickLotz",
             "Helpsy"
           ],
-          "best_for": "Overstock, returns, trendy apparel",
-          "notes": "Lower cost, variable quality"
+          "notes": "Lower cost, variable quality \u2014 best for overstock, returns, trendy apparel"
         },
         {
-          "channel_type": "Dropshipping",
-          "example_platforms": [
+          "engagement_type": "Dropshipping",
+          "example_approach": [
             "AliExpress",
             "Spocket",
             "Syncee"
           ],
-          "best_for": "Trend testing, low capital",
-          "notes": "No inventory needed"
+          "notes": "No inventory needed \u2014 best for trend testing, low capital"
         },
         {
-          "channel_type": "Boutique/Vintage",
-          "example_platforms": [
+          "engagement_type": "Boutique/Vintage",
+          "example_approach": [
             "Fleek",
             "Boutique by the Box"
           ],
-          "best_for": "Trendy fashion, Y2K, curated items",
-          "notes": "Higher resale value"
+          "notes": "Higher resale value \u2014 best for trendy fashion, Y2K, curated items"
         },
         {
-          "channel_type": "Category-Specific",
-          "example_platforms": [
+          "engagement_type": "Category-Specific",
+          "example_approach": [
             "Torg"
           ],
-          "best_for": "Food & beverage trends",
-          "notes": "Niche but profitable"
+          "notes": "Niche but profitable \u2014 best for food & beverage trends"
         }
       ]
     },
@@ -325,13 +365,14 @@
       ],
       "next_steps": "Request a 20-minute intro call with the Head Buyer",
       "objection_handling": "If an existing sourcing relationship is mentioned, ask about typical fulfillment lag",
-      "sourcing_recommendation": {
-        "channel_type": "Boutique/Vintage",
-        "recommended_platforms": [
-          "Fleek",
-          "Boutique by the Box"
+      "engagement_recommendation": {
+        "engagement_type": "Wholesale",
+        "recommended_approach": [
+          "Alibaba",
+          "Faire",
+          "SaleHoo"
         ],
-        "margin_notes": "Fits this retailer's Y2K/curated-fashion focus and commands higher resale value than generic wholesale, per the Boutique/Vintage channel's own notes"
+        "notes": "Higher margins, requires upfront buying \u2014 best for clothing, home goods, beauty"
       },
       "evaluation": null
     }
@@ -358,6 +399,7 @@
           "public statements about supply-chain challenges"
         ],
         "product_document_summary": "",
+        "practice_area": "",
         "evaluation": null
       },
       "company_research_summary": {
@@ -417,13 +459,14 @@
         ],
         "next_steps": "Request a 20-minute intro call with the Head Buyer",
         "objection_handling": "If an existing sourcing relationship is mentioned, ask about typical fulfillment lag",
-        "sourcing_recommendation": {
-          "channel_type": "Boutique/Vintage",
-          "recommended_platforms": [
-            "Fleek",
-            "Boutique by the Box"
+        "engagement_recommendation": {
+          "engagement_type": "Wholesale",
+          "recommended_approach": [
+            "Alibaba",
+            "Faire",
+            "SaleHoo"
           ],
-          "margin_notes": "Fits this retailer's Y2K/curated-fashion focus and commands higher resale value than generic wholesale, per the Boutique/Vintage channel's own notes"
+          "notes": "Higher margins, requires upfront buying \u2014 best for clothing, home goods, beauty"
         },
         "evaluation": null
       }
@@ -447,13 +490,14 @@
       "financial_summary": "No public filings found; appears to be privately held",
       "filing_highlights": [],
       "recommended_strategy": "Lead with curated scarcity and margin upside; request a short intro call",
-      "sourcing_recommendation": {
-        "channel_type": "Boutique/Vintage",
-        "recommended_platforms": [
-          "Fleek",
-          "Boutique by the Box"
+      "engagement_recommendation": {
+        "engagement_type": "Wholesale",
+        "recommended_approach": [
+          "Alibaba",
+          "Faire",
+          "SaleHoo"
         ],
-        "margin_notes": "Fits this retailer's Y2K/curated-fashion focus and commands higher resale value than generic wholesale, per the Boutique/Vintage channel's own notes"
+        "notes": "Higher margins, requires upfront buying \u2014 best for clothing, home goods, beauty"
       },
       "action_links": [
         "https://example-boutique-retailer.com",

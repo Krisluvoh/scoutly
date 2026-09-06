@@ -28,7 +28,7 @@ from agents.report_agent import ReportAgent
 from agents.sales_recommendation_agent import SalesRecommendationAgent
 from llm_client import LLMClient
 from memory import ScoutlyMemory
-from sourcing_channels import SOURCING_CHANNELS
+from practice_playbooks import PRACTICE_PLAYBOOKS
 from web_research import (
     Fetcher,
     HttpFetcher,
@@ -128,6 +128,7 @@ class ScoutlyOrchestrator:
         competitor_urls: list[str],
         product_category: str = "",
         product_document_text: str = "",
+        practice_area: str = "",
     ) -> dict:
         """
         Runs one full Account Intake -> Company Research -> Competitor ->
@@ -137,8 +138,14 @@ class ScoutlyOrchestrator:
         Action Links section. product_document_text is the optional
         extracted text of an uploaded product-overview file (see
         document_intake.py) — the CAP 931 brief's optional "upload a
-        proprietary internal sheet" input.
+        proprietary internal sheet" input. practice_area is an optional key
+        into practice_playbooks.PRACTICE_PLAYBOOKS (e.g. "cybersecurity_risk")
+        that grounds Company Research and Sales Recommendation in that
+        practice's own research signals, trigger events, and engagement
+        models instead of generic sales boilerplate — "" is a legitimate
+        choice (no practice-specific playbook applies).
         """
+        playbook = PRACTICE_PLAYBOOKS.get(practice_area)
         intake_input = {
             "rep_product_name": rep_product_name,
             "product_category": product_category,
@@ -147,6 +154,7 @@ class ScoutlyOrchestrator:
             "company_url": company_url,
             "competitor_urls": competitor_urls,
             "product_document_text": product_document_text,
+            "practice_area": practice_area,
         }
         intake_output = self.account_intake_agent.run(self.memory, intake_input)
         self.memory.update_from_account_intake(intake_output)
@@ -170,6 +178,7 @@ class ScoutlyOrchestrator:
             "fetched_pages": self._pages_as_dicts(company_pages),
             "edgar_filings": [vars(f) for f in edgar_filings],  # FilingInfo -> dict, same reason as above
             "filing_sections": filing_sections,
+            "practice_research_signals": playbook["research_signals"] if playbook else [],
             "intake_summary": intake_output,
         }
         company_research_output = self.company_research_agent.run(self.memory, company_research_input)
@@ -193,9 +202,10 @@ class ScoutlyOrchestrator:
             "intake_summary": intake_output,
             "company_research_summary": company_research_output,
             "competitor_summary": competitor_output,
-            # Static reference data, not fetched — grounds the agent's channel/platform
-            # pick in real options instead of letting it invent platform names.
-            "sourcing_channels": SOURCING_CHANNELS,
+            "practice_trigger_events": playbook["trigger_events"] if playbook else [],
+            # Static reference data, not fetched — grounds the agent's engagement-type
+            # pick in real options instead of letting it invent one.
+            "engagement_models": playbook["engagement_models"] if playbook else [],
         }
         recommendation_output = self.sales_recommendation_agent.run(self.memory, recommendation_input)
         self.memory.update_from_sales_recommendation(recommendation_output)

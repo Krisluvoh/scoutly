@@ -46,6 +46,13 @@ exact text — a stated strategic priority, a disclosed risk, a cybersecurity po
 If a section came back empty (not every filing has a Cybersecurity item, for example) or \
 no filing sections were given at all, leave filing_highlights empty — never invent 10-K \
 content that wasn't in the text you were given.
+- If PRACTICE RESEARCH SIGNALS are given in NEW INPUT (specific things worth looking for, \
+based on the rep's selected consulting/advisory practice — e.g. cloud vendor mentions for a \
+Cloud practice, breach/compliance mentions for Cybersecurity), actively look for those \
+specific signals in the fetched text and call them out via key_initiatives, \
+compliance_mentions, or financial_summary when they're actually present. Still ground \
+everything only in the fetched text you were given — never invent a signal that isn't \
+actually there just because it was listed as worth looking for.
 - List every URL you actually drew information from in "sources" (from FETCHED PAGE \
 CONTENT and EDGAR FILINGS given to you) — these become the brief's action links, so never \
 list a URL you weren't given.

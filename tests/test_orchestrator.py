@@ -36,6 +36,7 @@ def test_full_pipeline_produces_all_five_outputs():
         target_customer_name="VP of IT Security",
         company_url="https://example-prospect.com",
         competitor_urls=["https://example-competitor.com"],
+        practice_area="cybersecurity_risk",
     )
     assert set(result.keys()) == {
         "company_url",
@@ -49,7 +50,41 @@ def test_full_pipeline_produces_all_five_outputs():
     assert result["account_intake"]["rep_product_name"]
     assert result["company_research"]["leadership"]
     assert result["report"]["action_links"]
-    assert result["report"]["sourcing_recommendation"]["channel_type"]
+    assert result["report"]["engagement_recommendation"]["engagement_type"]
+
+
+def test_full_pipeline_with_no_practice_area_omits_engagement_recommendation():
+    orchestrator = _make_orchestrator()
+    result = orchestrator.run_account_brief(
+        rep_product_name="CloudGuard",
+        value_proposition="Faster breach response",
+        target_customer_name="VP of IT Security",
+        company_url="https://example-prospect.com",
+        competitor_urls=[],
+    )
+    assert result["sales_recommendation"]["engagement_recommendation"] is None
+    assert result["report"]["engagement_recommendation"] is None
+
+
+def test_practice_playbook_data_is_threaded_into_agent_inputs():
+    orchestrator = _make_orchestrator()
+    orchestrator.run_account_brief(
+        rep_product_name="CloudGuard",
+        value_proposition="Faster breach response",
+        target_customer_name="VP of IT Security",
+        company_url="https://example-prospect.com",
+        competitor_urls=[],
+        practice_area="cybersecurity_risk",
+    )
+    company_research_input = next(
+        e["input"] for e in orchestrator.transcript if e["agent"] == "company_research"
+    )
+    sales_recommendation_input = next(
+        e["input"] for e in orchestrator.transcript if e["agent"] == "sales_recommendation"
+    )
+    assert company_research_input["practice_research_signals"]
+    assert sales_recommendation_input["practice_trigger_events"]
+    assert sales_recommendation_input["engagement_models"]
 
 
 def test_memory_updated_after_full_pipeline_run():

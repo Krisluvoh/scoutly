@@ -93,14 +93,20 @@ def test_sales_recommendation_agent_returns_validated_schema(client, memory):
             "intake_summary": {},
             "company_research_summary": {},
             "competitor_summary": {},
-            "sourcing_channels": [],
+            "engagement_models": [
+                {
+                    "engagement_type": "AI Readiness Assessment",
+                    "example_approach": ["Data maturity audit"],
+                    "notes": "Best fit pre-pilot",
+                }
+            ],
         },
     )
     assert "recommended_approach" in result
     assert "next_steps" in result
     assert "objection_handling" in result
-    assert "sourcing_recommendation" in result
-    assert result["sourcing_recommendation"]["channel_type"]
+    assert "engagement_recommendation" in result
+    assert result["engagement_recommendation"]["engagement_type"] == "AI Readiness Assessment"
 
 
 def test_sales_recommendation_agent_never_leaks_other_role_fields(client, memory):
@@ -118,13 +124,20 @@ def test_report_agent_returns_validated_schema(client, memory):
             "intake_summary": {},
             "company_research_summary": {},
             "competitor_summary": {},
-            "recommendation_summary": {},
+            "recommendation_summary": {
+                "engagement_recommendation": {
+                    "engagement_type": "Cloud Migration Assessment",
+                    "recommended_approach": ["Workload discovery"],
+                    "notes": "Best fit pre-migration",
+                }
+            },
         },
     )
     assert "action_links" in result
     assert "leadership_information" in result
     assert "recommended_strategy" in result
-    assert "sourcing_recommendation" in result
+    assert "engagement_recommendation" in result
+    assert result["engagement_recommendation"]["engagement_type"] == "Cloud Migration Assessment"
 
 
 def test_evaluation_scores_are_within_bounds_when_present(client, memory):

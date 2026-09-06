@@ -7,11 +7,14 @@ orchestrator.py). Also the only agent that handles a prospect's objection on
 a follow-up turn (ScoutlyOrchestrator.handle_prospect_objection), since
 objection handling is explicitly this agent's job, not a new research pass.
 
-When sourcing_channels.SOURCING_CHANNELS is passed in as reference data,
-this agent also recommends which real sourcing channel (wholesale,
-liquidation, dropshipping, etc — see sourcing_channels.py) best fits the
-target account, grounding margin reasoning in that reference data rather
-than inventing platform names or numbers.
+When practice_playbooks.PRACTICE_PLAYBOOKS' engagement_models for the rep's
+selected practice area are passed in as reference data, this agent also
+recommends which real engagement type (assessment, managed service, staff
+augmentation, etc — see practice_playbooks.py) best fits the target
+account, grounding its reasoning in that reference data rather than
+inventing engagement names or approach details. The same playbook's
+trigger_events tell it what counts as a time-sensitive buying signal for
+that practice.
 
 Output is validated against schemas.SalesRecommendationOutput by
 BaseAgent.run().
@@ -39,13 +42,20 @@ customer's role and the company's situation.
 - Flag time_sensitive_signals: anything in the research worth acting on quickly (a recent \
 leadership change, a hiring surge in the relevant department, a compliance deadline, a \
 competitor's public stumble) — this is the account-monitoring "alert" a rep would want \
-surfaced immediately, not buried in a report.
-- If SOURCING CHANNELS reference data is given to you in NEW INPUT, produce a \
-sourcing_recommendation: pick the channel_type and recommended_platforms from that list \
-that best fit the target account's apparent trend focus (inferred from the company \
-research given to you), and write margin_notes grounded in that channel's own "notes" \
-field — never invent a platform name or margin figure that isn't in the reference data. \
-If no sourcing channel data is given, omit sourcing_recommendation.
+surfaced immediately, not buried in a report. If PRACTICE TRIGGER EVENTS are given in NEW \
+INPUT (what typically signals a buying opportunity for the rep's selected practice — e.g. a \
+new CISO hire for Cybersecurity, a disclosed outage for Cloud & Infrastructure), check \
+whether anything in the research given to you actually matches one of those triggers, and \
+if so surface it in the practice's own language. Never force a match the research doesn't \
+actually support.
+- If ENGAGEMENT MODELS reference data is given to you in NEW INPUT (the real engagement \
+types available for the rep's selected practice — e.g. "AI Readiness Assessment", "Managed \
+Cloud Operations"), produce an engagement_recommendation: pick the engagement_type and \
+example approach items from that list that best fit the target account's apparent \
+situation (inferred from the research given to you), and write notes grounded in that \
+engagement model's own "notes" field — never invent an engagement type or approach that \
+isn't in the reference data. If no engagement model data is given, omit \
+engagement_recommendation.
 - Handle objections honestly: if PAST PROSPECT OBJECTIONS appear in MEMORY CONTEXT, or a \
 new one arrives in NEW INPUT, address it plainly in objection_handling rather than \
 ignoring it or being pushy.
@@ -61,10 +71,10 @@ shape:
   "time_sensitive_signals": [],
   "next_steps": "",
   "objection_handling": "",
-  "sourcing_recommendation": {
-    "channel_type": "",
-    "recommended_platforms": [],
-    "margin_notes": ""
+  "engagement_recommendation": {
+    "engagement_type": "",
+    "recommended_approach": [],
+    "notes": ""
   },
   "evaluation": {
     "relevance": 0,
