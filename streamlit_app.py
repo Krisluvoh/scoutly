@@ -57,15 +57,15 @@ THEME_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --sc-accent: #E3B341;
-    --sc-accent-bright: #F4CE6A;
-    --sc-accent-deep: #C99A2E;
-    --sc-accent-soft: rgba(227, 179, 65, 0.12);
-    --sc-ink: #F5F5F0;
-    --sc-muted: #A3A192;
-    --sc-panel: #15171E;
-    --sc-bg: #0B0D12;
-    --sc-border: rgba(245, 245, 240, 0.10);
+    --sc-accent: #059669;
+    --sc-accent-bright: #10B981;
+    --sc-accent-deep: #065F46;
+    --sc-accent-soft: rgba(5, 150, 105, 0.10);
+    --sc-ink: #14201B;
+    --sc-muted: #6B7565;
+    --sc-panel: #FFFFFF;
+    --sc-bg: #FAF9F4;
+    --sc-border: #E5E2D8;
 }
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
@@ -74,7 +74,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 .stApp {
     background:
-        radial-gradient(ellipse 900px 420px at 50% -8%, rgba(227, 179, 65, 0.14), transparent 70%),
+        radial-gradient(ellipse 900px 420px at 50% -8%, rgba(5, 150, 105, 0.10), transparent 70%),
         var(--sc-bg);
 }
 
@@ -109,14 +109,14 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     color: var(--sc-muted);
     margin-top: 0.7rem;
 }
-.sc-hero .sc-provider b { color: var(--sc-accent-bright); font-weight: 600; }
+.sc-hero .sc-provider b { color: var(--sc-accent-deep); font-weight: 600; }
 
 div[data-testid="stForm"] {
     background: var(--sc-panel);
     border: 1px solid var(--sc-border);
     border-radius: 10px;
     padding: 2rem 2rem 1.4rem 2rem;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 4px 20px rgba(20, 32, 27, 0.06);
 }
 
 label[data-testid="stWidgetLabel"] p {
@@ -145,7 +145,7 @@ div[data-testid="stFormSubmitButton"] button,
 div[data-testid="stBaseButton-primary"] button {
     width: 100%;
     background: linear-gradient(135deg, var(--sc-accent-bright), var(--sc-accent) 55%, var(--sc-accent-deep));
-    color: #17130A;
+    color: #FFFFFF;
     border: none;
     border-radius: 6px;
     font-family: 'IBM Plex Sans', sans-serif;
@@ -153,18 +153,18 @@ div[data-testid="stBaseButton-primary"] button {
     font-weight: 700;
     letter-spacing: 0.02em;
     padding: 0.65rem 0;
-    box-shadow: 0 4px 18px rgba(227, 179, 65, 0.28);
+    box-shadow: 0 4px 18px rgba(5, 150, 105, 0.28);
     transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 div[data-testid="stFormSubmitButton"] button:hover {
-    box-shadow: 0 6px 24px rgba(227, 179, 65, 0.4);
+    box-shadow: 0 6px 24px rgba(5, 150, 105, 0.4);
     transform: translateY(-1px);
 }
 
 div[data-testid="stDownloadButton"] button {
     width: 100%;
     background: transparent;
-    color: var(--sc-accent-bright);
+    color: var(--sc-accent-deep);
     border: 1px solid var(--sc-accent);
     border-radius: 6px;
     font-family: 'IBM Plex Sans', sans-serif;
@@ -175,7 +175,7 @@ div[data-testid="stDownloadButton"] button {
 }
 div[data-testid="stDownloadButton"] button:hover {
     background: var(--sc-accent-soft);
-    box-shadow: 0 4px 18px rgba(227, 179, 65, 0.2);
+    box-shadow: 0 4px 18px rgba(5, 150, 105, 0.15);
 }
 
 .sc-panel {
@@ -185,7 +185,7 @@ div[data-testid="stDownloadButton"] button:hover {
     padding: 1.5rem 1.7rem;
     margin-top: 1.2rem;
     border-radius: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 20px rgba(20, 32, 27, 0.05);
 }
 .sc-panel .sc-label {
     font-family: 'IBM Plex Sans', sans-serif;
@@ -193,7 +193,7 @@ div[data-testid="stDownloadButton"] button:hover {
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--sc-accent-bright);
+    color: var(--sc-accent-deep);
     margin-bottom: 0.9rem;
 }
 .sc-panel .sc-row {
@@ -223,11 +223,11 @@ div[data-testid="stDownloadButton"] button:hover {
     padding-bottom: 0.9rem;
     border-bottom: 1px solid var(--sc-border);
 }
-.sc-panel a { color: var(--sc-accent-bright); font-size: 0.9rem; }
+.sc-panel a { color: var(--sc-accent-deep); font-size: 0.9rem; }
 
 div[data-testid="stAlertContainer"] {
     background: var(--sc-accent-soft) !important;
-    border: 1px solid rgba(227, 179, 65, 0.3) !important;
+    border: 1px solid rgba(5, 150, 105, 0.25) !important;
     border-radius: 6px !important;
 }
 div[data-testid="stAlertContainer"] p {
@@ -235,7 +235,7 @@ div[data-testid="stAlertContainer"] p {
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
 }
-div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-bright) !important; }
+div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-deep) !important; }
 
 .sc-divider {
     text-align: center;
@@ -257,7 +257,7 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-bright) !importa
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--sc-accent-bright);
+    color: var(--sc-accent-deep);
     margin-bottom: 0.8rem;
 }
 .sc-loading .sc-loading-label .sc-dots span {
@@ -430,9 +430,9 @@ def _render_result(result: dict) -> None:
     )
 
 
-_PDF_ACCENT = (201, 154, 46)
-_PDF_INK = (23, 23, 26)
-_PDF_MUTED = (110, 105, 90)
+_PDF_ACCENT = (6, 95, 70)
+_PDF_INK = (20, 32, 27)
+_PDF_MUTED = (107, 117, 101)
 
 # fpdf2's core Times font only encodes latin-1; real LLM output routinely uses
 # smart quotes, em/en dashes, and ellipses that latin-1 can't represent, which

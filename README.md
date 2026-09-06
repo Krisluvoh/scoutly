@@ -98,7 +98,7 @@ main.py                    command-line demo entry point / scenario runner
 check_for_updates.py       reruns research for a saved account and reports new signals (see section 8)
 eval_models.py             empirical Claude/GPT-4o-mini/GPT-OSS comparison harness (see section 9)
 streamlit_app.py           browser-based web UI, same pipeline as main.py
-.streamlit/config.toml     Streamlit theme (charcoal + gold gradient accent — high-end business look)
+.streamlit/config.toml     Streamlit theme (ivory + deep emerald gradient accent — high-end business look)
 orchestrator.py            wires the five agents together, fetches pages, manages memory
 memory.py                  ScoutlyMemory: cross-run contextual memory for one account
 schemas.py                 pydantic schemas — one per agent's required JSON shape
@@ -376,11 +376,14 @@ addresses from the server.
   to explicitly cover authentication, RBAC, tenant isolation, managed
   secrets, HTTPS termination, database design, data retention,
   background jobs, horizontal scaling, monitoring, and backup/recovery.
-- Moved the visual identity once more to a richer, high-end business look:
-  a near-black background, a gold gradient accent with a soft glow on the
-  wordmark and primary button, and IBM Plex Sans throughout, aiming for
-  premium and confident rather than either the earlier boutique-luxury
-  serif look or the flatter clinical palette.
+- Moved the visual identity to a richer, high-end business look: a
+  near-black background, a gold gradient accent with a soft glow on the
+  wordmark and primary button, and IBM Plex Sans throughout — then moved
+  it once more to a warm ivory background with a deep emerald gradient
+  accent after the gold-on-charcoal palette read too close to the
+  original Trendora's brass-and-black concierge look. Same gradient/glow
+  "pop" treatment on the wordmark, button, and panel accents, just in a
+  color and background distinct from anything tried before.
 
 ## 14. Problems I ran into, and how I fixed them
 
