@@ -54,24 +54,29 @@ except Exception:  # noqa: BLE001 - no secrets.toml locally is expected, not an 
 
 THEME_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --sc-accent: #0E7490;
-    --sc-accent-hover: #155E75;
-    --sc-accent-soft: rgba(14, 116, 144, 0.08);
-    --sc-ink: #101828;
-    --sc-muted: #667085;
-    --sc-panel: #FFFFFF;
-    --sc-bg: #F7F9FB;
-    --sc-border: #E4E7EC;
+    --sc-accent: #E3B341;
+    --sc-accent-bright: #F4CE6A;
+    --sc-accent-deep: #C99A2E;
+    --sc-accent-soft: rgba(227, 179, 65, 0.12);
+    --sc-ink: #F5F5F0;
+    --sc-muted: #A3A192;
+    --sc-panel: #15171E;
+    --sc-bg: #0B0D12;
+    --sc-border: rgba(245, 245, 240, 0.10);
 }
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 #MainMenu, footer, header { visibility: hidden; }
 
-.stApp { background: var(--sc-bg); }
+.stApp {
+    background:
+        radial-gradient(ellipse 900px 420px at 50% -8%, rgba(227, 179, 65, 0.14), transparent 70%),
+        var(--sc-bg);
+}
 
 .block-container {
     max-width: 760px;
@@ -82,41 +87,43 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .sc-hero { text-align: center; margin-bottom: 2.5rem; }
 .sc-hero .sc-mark {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 2.2rem;
-    font-weight: 700;
+    font-size: 2.6rem;
+    font-weight: 800;
     letter-spacing: -0.01em;
-    color: var(--sc-ink);
     margin: 0;
+    background: linear-gradient(135deg, var(--sc-accent-bright), var(--sc-accent) 55%, var(--sc-accent-deep));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 .sc-hero .sc-tagline {
     font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--sc-muted);
-    margin: 0.6rem 0 0 0;
+    margin: 0.7rem 0 0 0;
 }
 .sc-hero .sc-provider {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     color: var(--sc-muted);
-    margin-top: 0.6rem;
-    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 0.7rem;
 }
-.sc-hero .sc-provider b { color: var(--sc-accent); font-weight: 600; }
+.sc-hero .sc-provider b { color: var(--sc-accent-bright); font-weight: 600; }
 
 div[data-testid="stForm"] {
     background: var(--sc-panel);
     border: 1px solid var(--sc-border);
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 2rem 2rem 1.4rem 2rem;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
 label[data-testid="stWidgetLabel"] p {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.78rem;
     font-weight: 600;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--sc-muted);
 }
@@ -137,37 +144,38 @@ div[data-testid="stTextArea"] textarea:focus {
 div[data-testid="stFormSubmitButton"] button,
 div[data-testid="stBaseButton-primary"] button {
     width: 100%;
-    background: var(--sc-accent);
-    color: #FFFFFF;
-    border: 1px solid var(--sc-accent);
+    background: linear-gradient(135deg, var(--sc-accent-bright), var(--sc-accent) 55%, var(--sc-accent-deep));
+    color: #17130A;
+    border: none;
     border-radius: 6px;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    padding: 0.6rem 0;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.65rem 0;
+    box-shadow: 0 4px 18px rgba(227, 179, 65, 0.28);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 div[data-testid="stFormSubmitButton"] button:hover {
-    background: var(--sc-accent-hover);
-    border-color: var(--sc-accent-hover);
+    box-shadow: 0 6px 24px rgba(227, 179, 65, 0.4);
+    transform: translateY(-1px);
 }
 
 div[data-testid="stDownloadButton"] button {
     width: 100%;
-    background: #FFFFFF;
-    color: var(--sc-accent);
-    border: 1px solid var(--sc-border);
+    background: transparent;
+    color: var(--sc-accent-bright);
+    border: 1px solid var(--sc-accent);
     border-radius: 6px;
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.8rem;
     font-weight: 600;
     padding: 0.55rem 0;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 div[data-testid="stDownloadButton"] button:hover {
     background: var(--sc-accent-soft);
-    border-color: var(--sc-accent);
+    box-shadow: 0 4px 18px rgba(227, 179, 65, 0.2);
 }
 
 .sc-panel {
@@ -176,16 +184,16 @@ div[data-testid="stDownloadButton"] button:hover {
     background: var(--sc-panel);
     padding: 1.5rem 1.7rem;
     margin-top: 1.2rem;
-    border-radius: 8px;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
 }
 .sc-panel .sc-label {
     font-family: 'IBM Plex Sans', sans-serif;
     font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--sc-accent);
+    color: var(--sc-accent-bright);
     margin-bottom: 0.9rem;
 }
 .sc-panel .sc-row {
@@ -208,18 +216,18 @@ div[data-testid="stDownloadButton"] button:hover {
 }
 .sc-panel .sc-verdict {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 600;
-    font-size: 1.1rem;
+    font-weight: 700;
+    font-size: 1.15rem;
     color: var(--sc-ink);
     margin-bottom: 0.9rem;
     padding-bottom: 0.9rem;
     border-bottom: 1px solid var(--sc-border);
 }
-.sc-panel a { color: var(--sc-accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; }
+.sc-panel a { color: var(--sc-accent-bright); font-size: 0.9rem; }
 
 div[data-testid="stAlertContainer"] {
     background: var(--sc-accent-soft) !important;
-    border: 1px solid rgba(14, 116, 144, 0.2) !important;
+    border: 1px solid rgba(227, 179, 65, 0.3) !important;
     border-radius: 6px !important;
 }
 div[data-testid="stAlertContainer"] p {
@@ -227,11 +235,12 @@ div[data-testid="stAlertContainer"] p {
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
 }
-div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
+div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-bright) !important; }
 
 .sc-divider {
     text-align: center;
-    color: var(--sc-border);
+    color: var(--sc-accent);
+    opacity: 0.5;
     margin: 2.2rem 0 1.4rem 0;
     font-size: 0.8rem;
 }
@@ -248,7 +257,7 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--sc-accent);
+    color: var(--sc-accent-bright);
     margin-bottom: 0.8rem;
 }
 .sc-loading .sc-loading-label .sc-dots span {
@@ -272,7 +281,7 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent) !important; }
     left: -35%;
     height: 100%;
     width: 35%;
-    background: var(--sc-accent);
+    background: linear-gradient(90deg, transparent, var(--sc-accent-bright), transparent);
     border-radius: 3px;
     animation: sc-sweep 1.4s ease-in-out infinite;
 }
@@ -421,9 +430,9 @@ def _render_result(result: dict) -> None:
     )
 
 
-_PDF_ACCENT = (14, 116, 144)
-_PDF_INK = (16, 24, 40)
-_PDF_MUTED = (102, 112, 133)
+_PDF_ACCENT = (201, 154, 46)
+_PDF_INK = (23, 23, 26)
+_PDF_MUTED = (110, 105, 90)
 
 # fpdf2's core Times font only encodes latin-1; real LLM output routinely uses
 # smart quotes, em/en dashes, and ellipses that latin-1 can't represent, which
@@ -492,8 +501,8 @@ def _build_pdf(company_url: str, result: dict, followup: dict | None = None) -> 
     pdf.set_margins(20, 20, 20)
     pdf.add_page()
 
-    pdf.set_font("Helvetica", "B", 20)
-    pdf.set_text_color(*_PDF_INK)
+    pdf.set_font("Helvetica", "B", 22)
+    pdf.set_text_color(*_PDF_ACCENT)
     pdf.cell(0, 10, "Scoutly", new_x="LMARGIN", new_y="NEXT", align="L")
 
     pdf.set_font("Helvetica", "", 10)
