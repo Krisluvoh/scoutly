@@ -627,13 +627,13 @@ if "orchestrator" not in st.session_state:
 
 with st.form("intake_form"):
     rep_product_name = st.text_input(
-        "What Are You Selling", placeholder="e.g. Scoutly Curated Sourcing"
+        "What Are You Selling", placeholder="e.g. Cloud Modernization Advisory"
     )
     value_proposition = st.text_area(
         "Value Proposition",
-        placeholder="e.g. We find and secure hard-to-find trend inventory so your buyers don't have to",
+        placeholder="e.g. We help enterprise teams modernize legacy systems without disrupting operations",
     )
-    target_customer_name = st.text_input("Target Customer / Role", placeholder="e.g. Head Buyer")
+    target_customer_name = st.text_input("Target Customer / Role", placeholder="e.g. VP of Engineering")
     product_category = st.text_input(
         "Product Category (optional)", placeholder="Leave blank to let the agent infer it"
     )
@@ -645,10 +645,10 @@ with st.form("intake_form"):
             "signals and engagement models instead of generic sales boilerplate."
         ),
     )
-    company_url = st.text_input("Target Company URL", placeholder="https://www.example-boutique-retailer.com")
+    company_url = st.text_input("Target Company URL", placeholder="https://www.example-company.com")
     competitor_urls_raw = st.text_area(
         "Competitor URLs (one per line)",
-        placeholder="https://www.retail-competitor-a.com\nhttps://www.retail-competitor-b.com",
+        placeholder="https://www.competitor-a.com\nhttps://www.competitor-b.com",
     )
     product_document = st.file_uploader(
         "Product Overview (optional)",
@@ -696,7 +696,7 @@ if st.session_state.result:
     with st.form("objection_form"):
         objection_text = st.text_input(
             "Prospect Pushed Back?",
-            placeholder="e.g. We already have an informal relationship with a few boutique suppliers.",
+            placeholder="e.g. We already handle this in-house with our own team.",
         )
         objection_submitted = st.form_submit_button("Log Their Objection")
 
