@@ -1,7 +1,7 @@
 # Scoutly — Multi-Agent B2B Account Intelligence Assistant (CAP 931 Capstone)
 
-Scoutly helps a B2B sales rep research a prospective company before
-outreach. Give it what you're selling, your value proposition, the target
+Scoutly helps a B2B consulting or sales rep research a prospective company
+before outreach. Give it what you're selling, your value proposition, the target
 company's URL, and its competitors' URLs, and five AI agents chain
 together to produce a one-page account intelligence brief: company
 strategy, leadership, press/compliance initiatives, competitive
@@ -427,6 +427,14 @@ addresses from the server.
   research tools (the audience this tool is actually built for) tend to
   use — keeping the larger, bolder panel headings for hierarchy, since
   size and weight aid legibility in a way a glow effect doesn't.
+- Made the intake form's placeholder examples industry-neutral (they'd
+  stayed retail-sourcing flavored even after the practice-area
+  generalization, which undercut the point), and reworded the tagline
+  from "Account Intelligence for B2B Sales Reps" to "Account Intelligence
+  for B2B Consulting & Sales Teams" to lead with the consulting-firm
+  positioning the practice playbooks are actually built around, while
+  keeping "sales" since the codebase's own vocabulary (agent names,
+  schema fields) is still sales-terminology throughout.
 
 ## 14. Problems I ran into, and how I fixed them
 

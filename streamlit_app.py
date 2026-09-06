@@ -611,7 +611,7 @@ st.markdown(
     f"""
     <div class="sc-hero">
         <p class="sc-mark">Scoutly</p>
-        <p class="sc-tagline">Account intelligence for B2B sales reps</p>
+        <p class="sc-tagline">Account intelligence for B2B consulting & sales teams</p>
         <p class="sc-provider">Advised by <b>{PROVIDER}</b> · Fetching pages via <b>{FETCH_MODE}</b></p>
     </div>
     """,
