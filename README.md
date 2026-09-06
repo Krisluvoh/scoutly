@@ -395,7 +395,9 @@ addresses from the server.
   panel section headings (Account Snapshot, Company Research, etc.)
   were enlarged and switched to a deeper, higher-contrast emerald
   gradient with a soft glow, so they read as real headings rather than
-  small caps labels.
+  small caps labels — and the "Scoutly" wordmark got its own brighter,
+  all-light-stop gradient plus a matching glow so it stands out as the
+  brightest element on the page.
 
 ## 14. Problems I ran into, and how I fixed them
 

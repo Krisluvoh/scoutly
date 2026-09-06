@@ -97,10 +97,12 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     font-weight: 800;
     letter-spacing: -0.01em;
     margin: 0;
-    background: linear-gradient(135deg, var(--sc-accent-bright), var(--sc-accent) 55%, var(--sc-accent-deep));
+    background: linear-gradient(135deg, #6EE7B7, var(--sc-accent-bright) 55%, #10D9A0);
     -webkit-background-clip: text;
     background-clip: text;
+    -webkit-text-fill-color: transparent;
     color: transparent;
+    text-shadow: 0 0 30px rgba(52, 211, 153, 0.45);
 }
 .sc-hero .sc-tagline {
     font-family: 'Inter', sans-serif;
