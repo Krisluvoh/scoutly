@@ -60,12 +60,12 @@ THEME_CSS = """
     --sc-accent: #059669;
     --sc-accent-bright: #10B981;
     --sc-accent-deep: #065F46;
-    --sc-accent-soft: rgba(5, 150, 105, 0.10);
-    --sc-ink: #14201B;
-    --sc-muted: #6B7565;
-    --sc-panel: #FFFFFF;
-    --sc-bg: #FAF9F4;
-    --sc-border: #E5E2D8;
+    --sc-accent-soft: rgba(16, 185, 129, 0.12);
+    --sc-ink: #F1F5F9;
+    --sc-muted: #94A3B8;
+    --sc-panel: #121A2B;
+    --sc-bg: #0B1220;
+    --sc-border: rgba(226, 232, 240, 0.10);
 }
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
@@ -74,7 +74,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 .stApp {
     background:
-        radial-gradient(ellipse 900px 420px at 50% -8%, rgba(5, 150, 105, 0.10), transparent 70%),
+        radial-gradient(ellipse 900px 420px at 50% -8%, rgba(16, 185, 129, 0.14), transparent 70%),
         var(--sc-bg);
 }
 
@@ -109,14 +109,14 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     color: var(--sc-muted);
     margin-top: 0.7rem;
 }
-.sc-hero .sc-provider b { color: var(--sc-accent-deep); font-weight: 600; }
+.sc-hero .sc-provider b { color: var(--sc-accent-bright); font-weight: 600; }
 
 div[data-testid="stForm"] {
     background: var(--sc-panel);
     border: 1px solid var(--sc-border);
     border-radius: 10px;
     padding: 2rem 2rem 1.4rem 2rem;
-    box-shadow: 0 4px 20px rgba(20, 32, 27, 0.06);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
 label[data-testid="stWidgetLabel"] p {
@@ -164,7 +164,7 @@ div[data-testid="stFormSubmitButton"] button:hover {
 div[data-testid="stDownloadButton"] button {
     width: 100%;
     background: transparent;
-    color: var(--sc-accent-deep);
+    color: var(--sc-accent-bright);
     border: 1px solid var(--sc-accent);
     border-radius: 6px;
     font-family: 'IBM Plex Sans', sans-serif;
@@ -185,7 +185,7 @@ div[data-testid="stDownloadButton"] button:hover {
     padding: 1.5rem 1.7rem;
     margin-top: 1.2rem;
     border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(20, 32, 27, 0.05);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
 }
 .sc-panel .sc-label {
     font-family: 'IBM Plex Sans', sans-serif;
@@ -193,7 +193,7 @@ div[data-testid="stDownloadButton"] button:hover {
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--sc-accent-deep);
+    color: var(--sc-accent-bright);
     margin-bottom: 0.9rem;
 }
 .sc-panel .sc-row {
@@ -223,11 +223,11 @@ div[data-testid="stDownloadButton"] button:hover {
     padding-bottom: 0.9rem;
     border-bottom: 1px solid var(--sc-border);
 }
-.sc-panel a { color: var(--sc-accent-deep); font-size: 0.9rem; }
+.sc-panel a { color: var(--sc-accent-bright); font-size: 0.9rem; }
 
 div[data-testid="stAlertContainer"] {
     background: var(--sc-accent-soft) !important;
-    border: 1px solid rgba(5, 150, 105, 0.25) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
     border-radius: 6px !important;
 }
 div[data-testid="stAlertContainer"] p {
@@ -235,7 +235,7 @@ div[data-testid="stAlertContainer"] p {
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
 }
-div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-deep) !important; }
+div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-bright) !important; }
 
 .sc-divider {
     text-align: center;
@@ -257,7 +257,7 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-deep) !important
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--sc-accent-deep);
+    color: var(--sc-accent-bright);
     margin-bottom: 0.8rem;
 }
 .sc-loading .sc-loading-label .sc-dots span {

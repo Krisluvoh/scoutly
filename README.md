@@ -98,7 +98,7 @@ main.py                    command-line demo entry point / scenario runner
 check_for_updates.py       reruns research for a saved account and reports new signals (see section 8)
 eval_models.py             empirical Claude/GPT-4o-mini/GPT-OSS comparison harness (see section 9)
 streamlit_app.py           browser-based web UI, same pipeline as main.py
-.streamlit/config.toml     Streamlit theme (ivory + deep emerald gradient accent — high-end business look)
+.streamlit/config.toml     Streamlit theme (navy + emerald gradient accent — high-end business look)
 orchestrator.py            wires the five agents together, fetches pages, manages memory
 memory.py                  ScoutlyMemory: cross-run contextual memory for one account
 schemas.py                 pydantic schemas — one per agent's required JSON shape
@@ -378,12 +378,13 @@ addresses from the server.
   background jobs, horizontal scaling, monitoring, and backup/recovery.
 - Moved the visual identity to a richer, high-end business look: a
   near-black background, a gold gradient accent with a soft glow on the
-  wordmark and primary button, and IBM Plex Sans throughout — then moved
-  it once more to a warm ivory background with a deep emerald gradient
-  accent after the gold-on-charcoal palette read too close to the
-  original Trendora's brass-and-black concierge look. Same gradient/glow
-  "pop" treatment on the wordmark, button, and panel accents, just in a
-  color and background distinct from anything tried before.
+  wordmark and primary button, and IBM Plex Sans throughout — then to a
+  warm ivory background with a deep emerald gradient accent after the
+  gold-on-charcoal palette read too close to the original Trendora's
+  brass-and-black concierge look — then to a deep navy background with
+  the same emerald accent, keeping the gradient/glow "pop" treatment but
+  landing on a background distinct from both Trendora's black and the
+  intermediate ivory version.
 
 ## 14. Problems I ran into, and how I fixed them
 
