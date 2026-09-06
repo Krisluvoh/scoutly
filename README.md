@@ -98,7 +98,7 @@ main.py                    command-line demo entry point / scenario runner
 check_for_updates.py       reruns research for a saved account and reports new signals (see section 8)
 eval_models.py             empirical Claude/GPT-4o-mini/GPT-OSS comparison harness (see section 9)
 streamlit_app.py           browser-based web UI, same pipeline as main.py
-.streamlit/config.toml     Streamlit theme (dark, brass accent — refined, not boutique-luxury)
+.streamlit/config.toml     Streamlit theme (light, teal accent — modern research-tool look)
 orchestrator.py            wires the five agents together, fetches pages, manages memory
 memory.py                  ScoutlyMemory: cross-run contextual memory for one account
 schemas.py                 pydantic schemas — one per agent's required JSON shape
@@ -368,8 +368,15 @@ addresses from the server.
   same depth as company research), an optional product-overview upload,
   real 10-K section-text analysis, a rerun-based account-update checker
   (`check_for_updates.py`), and an empirical model-comparison harness
-  (`eval_models.py`) — the five specific "continue developing" items from
-  a follow-up review of the CAP 931 resubmission.
+  (`eval_models.py`).
+- Moved the visual identity again, this time to a light, cool-toned,
+  clinical research-tool look (IBM Plex Sans/Mono, a precise teal accent,
+  crisp bordered cards) closer to the modern B2B intelligence tools in
+  Scoutly's own space, and substantially expanded the production
+  architecture documentation below to explicitly cover authentication,
+  RBAC, tenant isolation, managed secrets, HTTPS termination, database
+  design, data retention, background jobs, horizontal scaling,
+  monitoring, and backup/recovery.
 
 ## 14. Problems I ran into, and how I fixed them
 
@@ -409,11 +416,35 @@ is implemented.
 
 ## 16. If this went to production
 
+What's already true of the prototype:
+
 - **Swappable LLM providers**: switching between Anthropic/OpenAI/Groq/mock is one factory call or one environment variable.
 - **Swappable fetch backend**: same pattern for the page-fetching layer (`web_research.get_fetcher`), so a production deployment could swap in a headless-browser fetcher for JS-heavy sites without touching agent code.
 - **Schema enforcement**: pydantic catches any drift in the model's output before it reaches a user or the next agent.
-- **Memory**: right now it's just JSON files — fine for a prototype, but a real deployment would use an actual account/CRM database.
-- **Retries**: currently one corrective re-prompt if the model messes up the JSON. Production would need real exponential backoff and rate-limit handling — for both the LLM calls and the page fetches (SEC EDGAR especially expects well-behaved, rate-limited traffic).
-- **Observability**: transcripts are saved per account already; in production these would feed into structured logging so the eval scores could actually be monitored.
 - **Cost control**: mock mode is already fully separate from paid inference and live fetches, so tests, CI, and grading never touch API quota or the network.
 - **Reproducibility**: `uv.lock` pins the exact dependency graph, so `uv sync` gives you the same environment anywhere.
+
+What an enterprise, multi-tenant version would add, organized around the areas a real deployment has to answer for:
+
+**Authentication and access control**
+- Real user authentication (SSO/OAuth through an identity provider such as Okta, Azure AD, or Auth0) in place of the single shared browser session the prototype uses today.
+- Role-based access control (RBAC): a rep should be able to research and view their own accounts; a sales manager should see every rep's accounts on their team; an admin manages provider keys and webhook destinations. The prototype has no notion of roles — every user of the deployed app has the same implicit access.
+- Tenant isolation: each company using Scoutly needs its own account/memory namespace so one customer's research, uploaded product documents, and account history are never visible to another. `ScoutlyMemory.account_id` already exists as a partition key; production would enforce that boundary at the database and API layer, not by file-naming convention.
+
+**Secrets and network security**
+- Managed secrets: API keys come from a local `.env` file or Streamlit Cloud's secrets manager today. A production deployment would use a dedicated secrets manager (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault) with rotation and audit logging, not a flat secrets file.
+- HTTPS termination: Streamlit Cloud already terminates TLS for the current deployment. A self-hosted production deployment would need this handled explicitly, typically at a load balancer or reverse proxy in front of the app, not inside the application process itself.
+- The existing SSRF guard (`web_research._is_safe_url`) stays load-bearing in any deployment, since the app fetches user-supplied URLs server-side regardless of hosting.
+
+**Data persistence and privacy**
+- Persistent database design: `ScoutlyMemory` is JSON files today. Production would move to a real schema, likely on Postgres: an `accounts` table keyed by tenant and account ID, a `research_history` table for the append-only research log, and a `documents` table for uploaded product overviews, with the current dataclass's fields becoming columns instead of one JSON blob.
+- Data retention and privacy controls: uploaded product documents and fetched competitor page text can be sensitive. Production needs an explicit retention policy for research history and uploaded documents, a real deletion path (tenant offboarding, or a GDPR/CCPA-style deletion request), and encryption at rest for anything stored.
+
+**Background jobs and horizontal scaling**
+- Background-job infrastructure: `check_for_updates.py` is real rerun-and-diff logic today, invoked manually or by an external scheduler such as cron or Task Scheduler. Production would run it as an actual job queue per tenant per account (Celery, AWS SQS plus Lambda, or a managed scheduler like GCP Cloud Scheduler triggering a Cloud Run job), decoupled from the web process.
+- Horizontal scaling: the prototype is a single Streamlit process holding the orchestrator and memory in `st.session_state`. Production would separate the stateless agent-orchestration layer, scalable behind a load balancer, from the stateful memory layer (the database above), so multiple app instances can serve requests concurrently.
+- Retries: currently one corrective re-prompt if a model call returns malformed JSON. Production needs real exponential backoff and rate-limit handling for both LLM calls and page fetches, since SEC EDGAR in particular expects well-behaved, rate-limited traffic.
+
+**Monitoring and recovery**
+- Monitoring: full transcripts are already saved per account. Production would feed those into structured logging and metrics (for example OpenTelemetry into Datadog or Grafana), tracking per-agent latency, retry rate, and the same schema-compliance and unsupported-source signals `eval_models.py` measures, continuously rather than in a one-off comparison run.
+- Backup and recovery: the database above needs standard point-in-time backups, a tested restore path, and a defined recovery point/time objective, none of which a single JSON file per account can meaningfully provide.
