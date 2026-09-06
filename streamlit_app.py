@@ -64,6 +64,9 @@ THEME_CSS = """
     --sc-accent-pearl: linear-gradient(
         100deg, #34D399 0%, #A7F3D0 30%, #F0FDF9 50%, #A7F3D0 70%, #34D399 100%
     );
+    --sc-accent-pearl-heading: linear-gradient(
+        100deg, #047857 0%, #10B981 25%, #6EE7B7 50%, #10B981 75%, #047857 100%
+    );
     --sc-ink: #F8FAFC;
     --sc-muted: #CBD5E1;
     --sc-panel: #304673;
@@ -199,16 +202,17 @@ div[data-testid="stDownloadButton"] button:hover {
 }
 .sc-panel .sc-label {
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    margin-bottom: 0.9rem;
-    background: var(--sc-accent-pearl);
+    margin-bottom: 1.1rem;
+    background: var(--sc-accent-pearl-heading);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
+    text-shadow: 0 0 22px rgba(16, 185, 129, 0.45);
 }
 .sc-panel .sc-row {
     margin-bottom: 0.6rem;

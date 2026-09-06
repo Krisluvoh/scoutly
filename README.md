@@ -391,7 +391,11 @@ addresses from the server.
   emerald accent itself was brightened and given a subtle pearlescent
   sheen (a soft light-to-white gradient clipped to the text) on section
   labels, links, and small highlighted words, so it reads as a
-  polished, light-catching green rather than a flat fill.
+  polished, light-catching green rather than a flat fill — then the
+  panel section headings (Account Snapshot, Company Research, etc.)
+  were enlarged and switched to a deeper, higher-contrast emerald
+  gradient with a soft glow, so they read as real headings rather than
+  small caps labels.
 
 ## 14. Problems I ran into, and how I fixed them
 
