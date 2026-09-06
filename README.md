@@ -385,7 +385,9 @@ addresses from the server.
   the same emerald accent, keeping the gradient/glow "pop" treatment but
   landing on a background distinct from both Trendora's black and the
   intermediate ivory version — then lightened to a mid-tone navy for a
-  softer, less cave-like feel while keeping the same hue and accent.
+  softer, less cave-like feel while keeping the same hue and accent, with
+  body and label text brightened to a crisper near-white and light
+  slate for better contrast against the lighter background.
 
 ## 14. Problems I ran into, and how I fixed them
 
