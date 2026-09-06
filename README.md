@@ -387,7 +387,11 @@ addresses from the server.
   intermediate ivory version — then lightened to a mid-tone navy for a
   softer, less cave-like feel while keeping the same hue and accent, with
   body and label text brightened to a crisper near-white and light
-  slate for better contrast against the lighter background.
+  slate for better contrast against the lighter background. The
+  emerald accent itself was brightened and given a subtle pearlescent
+  sheen (a soft light-to-white gradient clipped to the text) on section
+  labels, links, and small highlighted words, so it reads as a
+  polished, light-catching green rather than a flat fill.
 
 ## 14. Problems I ran into, and how I fixed them
 
