@@ -62,12 +62,6 @@ THEME_CSS = """
     --sc-accent-bright: #34D399;
     --sc-accent-deep: #065F46;
     --sc-accent-soft: rgba(52, 211, 153, 0.12);
-    --sc-accent-pearl: linear-gradient(
-        100deg, #34D399 0%, #A7F3D0 30%, #F0FDF9 50%, #A7F3D0 70%, #34D399 100%
-    );
-    --sc-accent-pearl-heading: linear-gradient(
-        100deg, #047857 0%, #10B981 25%, #6EE7B7 50%, #10B981 75%, #047857 100%
-    );
     --sc-ink: #F8FAFC;
     --sc-muted: #CBD5E1;
     --sc-panel: #304673;
@@ -98,12 +92,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     font-weight: 800;
     letter-spacing: -0.01em;
     margin: 0;
-    background: linear-gradient(135deg, #6EE7B7, var(--sc-accent-bright) 55%, #10D9A0);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    text-shadow: 0 0 30px rgba(52, 211, 153, 0.45);
+    color: var(--sc-accent-bright);
 }
 .sc-hero .sc-tagline {
     font-family: 'Inter', sans-serif;
@@ -118,14 +107,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     color: var(--sc-muted);
     margin-top: 0.7rem;
 }
-.sc-hero .sc-provider b {
-    font-weight: 600;
-    background: var(--sc-accent-pearl);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-}
+.sc-hero .sc-provider b { color: var(--sc-accent-bright); font-weight: 600; }
 
 div[data-testid="stForm"] {
     background: var(--sc-panel);
@@ -210,12 +192,7 @@ div[data-testid="stDownloadButton"] button:hover {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     margin-bottom: 1.1rem;
-    background: var(--sc-accent-pearl-heading);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    text-shadow: 0 0 22px rgba(16, 185, 129, 0.45);
+    color: var(--sc-accent-bright);
 }
 .sc-panel .sc-row {
     margin-bottom: 0.6rem;
@@ -244,14 +221,7 @@ div[data-testid="stDownloadButton"] button:hover {
     padding-bottom: 0.9rem;
     border-bottom: 1px solid var(--sc-border);
 }
-.sc-panel a {
-    font-size: 0.9rem;
-    background: var(--sc-accent-pearl);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-}
+.sc-panel a { color: var(--sc-accent-bright); font-size: 0.9rem; }
 
 div[data-testid="stAlertContainer"] {
     background: var(--sc-accent-soft) !important;
@@ -286,17 +256,11 @@ div[data-testid="stAlertContainer"] svg { fill: var(--sc-accent-bright) !importa
     letter-spacing: 0.08em;
     text-transform: uppercase;
     margin-bottom: 0.8rem;
-    background: var(--sc-accent-pearl);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
+    color: var(--sc-accent-bright);
 }
 .sc-loading .sc-loading-label .sc-dots span {
     opacity: 0;
     animation: sc-dot-fade 1.4s infinite;
-    -webkit-text-fill-color: var(--sc-accent-bright);
-    color: var(--sc-accent-bright);
 }
 .sc-loading .sc-loading-label .sc-dots span:nth-child(1) { animation-delay: 0s; }
 .sc-loading .sc-loading-label .sc-dots span:nth-child(2) { animation-delay: 0.2s; }

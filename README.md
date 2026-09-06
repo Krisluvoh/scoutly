@@ -420,16 +420,13 @@ addresses from the server.
   softer, less cave-like feel while keeping the same hue and accent, with
   body and label text brightened to a crisper near-white and light
   slate for better contrast against the lighter background. The
-  emerald accent itself was brightened and given a subtle pearlescent
-  sheen (a soft light-to-white gradient clipped to the text) on section
-  labels, links, and small highlighted words, so it reads as a
-  polished, light-catching green rather than a flat fill — then the
-  panel section headings (Account Snapshot, Company Research, etc.)
-  were enlarged and switched to a deeper, higher-contrast emerald
-  gradient with a soft glow, so they read as real headings rather than
-  small caps labels — and the "Scoutly" wordmark got its own brighter,
-  all-light-stop gradient plus a matching glow so it stands out as the
-  brightest element on the page.
+  emerald accent itself was brightened, briefly given a pearlescent
+  shimmer and glow treatment on headings/links/the wordmark, then pulled
+  back to flat, solid emerald once that read as closer to a flashy
+  marketing page than the restrained, information-dense look enterprise
+  research tools (the audience this tool is actually built for) tend to
+  use — keeping the larger, bolder panel headings for hierarchy, since
+  size and weight aid legibility in a way a glow effect doesn't.
 
 ## 14. Problems I ran into, and how I fixed them
 
