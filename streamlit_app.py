@@ -63,8 +63,8 @@ THEME_CSS = """
     --sc-accent-soft: rgba(16, 185, 129, 0.12);
     --sc-ink: #F1F5F9;
     --sc-muted: #94A3B8;
-    --sc-panel: #121A2B;
-    --sc-bg: #0B1220;
+    --sc-panel: #304673;
+    --sc-bg: #253D6C;
     --sc-border: rgba(226, 232, 240, 0.10);
 }
 
